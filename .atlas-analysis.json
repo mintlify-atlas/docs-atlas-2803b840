@@ -1,0 +1,102 @@
+{
+  "projectType": "sdk-library",
+  "projectName": "Blumbaben",
+  "projectDescription": "A lightweight TypeScript React hook library for adding contextual formatting toolbars to text inputs and textareas.",
+  "theme": "palm",
+  "primaryColor": "#3b82f6",
+  "lightColor": "#60a5fa",
+  "darkColor": "#1e40af",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/global-state",
+              "concepts/formatter-functions",
+              "concepts/positioning"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/basic-usage",
+              "guides/multiple-inputs",
+              "guides/custom-positioning",
+              "guides/styling"
+            ]
+          },
+          {
+            "group": "Examples",
+            "pages": [
+              "examples/markdown-toolbar",
+              "examples/text-transforms",
+              "examples/conditional-toolbar"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Hooks",
+            "pages": [
+              "api/hooks/use-formatting-toolbar",
+              "api/hooks/use-formatting-toolbar-state"
+            ]
+          },
+          {
+            "group": "Components",
+            "pages": [
+              "api/components/formatting-toolbar",
+              "api/components/with-formatting-toolbar"
+            ]
+          },
+          {
+            "group": "Utilities",
+            "pages": [
+              "api/utilities/dom-utils"
+            ]
+          },
+          {
+            "group": "Types",
+            "pages": [
+              "api/types"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Global state management with single toolbar instance",
+    "Smart automatic positioning relative to focused elements",
+    "Flexible styling with bring-your-own-UI approach",
+    "Full TypeScript support with comprehensive type definitions",
+    "Lightweight with zero external dependencies",
+    "Customizable behavior and positioning"
+  ],
+  "publicApiSurface": [
+    "useFormattingToolbar",
+    "useFormattingToolbarState",
+    "FormattingToolbar",
+    "withFormattingToolbar",
+    "applyFormattingOnSelection",
+    "FormatterFunction",
+    "ToolbarConfig",
+    "ToolbarState",
+    "ToolbarPosition",
+    "TextInputElement"
+  ]
+}
