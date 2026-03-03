@@ -1,0 +1,121 @@
+---
+title: Introduction
+description: A lightweight TypeScript React hook library for adding contextual formatting toolbars to text inputs and textareas
+---
+
+# Welcome to Blumbaben
+
+Blumbaben is a lightweight TypeScript React hook library for adding contextual formatting toolbars to text inputs and textareas. Show contextual formatting options when users focus on input fields.
+
+<iframe
+  src="https://blumbaben.vercel.app"
+  width="100%"
+  height="600px"
+  style={{ border: '1px solid #e5e7eb', borderRadius: '8px', marginTop: '1rem' }}
+/>
+
+<Note>
+  Explore the live Storybook showcase at [blumbaben.vercel.app](https://blumbaben.vercel.app) to see interactive examples and use cases.
+</Note>
+
+## Features
+
+Blumbaben provides a powerful yet simple API for adding formatting toolbars to any text input or textarea in your React application.
+
+<CardGroup cols={2}>
+  <Card title="Global state management" icon="globe">
+    Single toolbar instance shared across all inputs in your application. No prop drilling required.
+  </Card>
+  
+  <Card title="Smart positioning" icon="location-dot">
+    Automatic toolbar positioning with customizable placement. Position above, below, or anywhere relative to the focused element.
+  </Card>
+  
+  <Card title="Flexible styling" icon="palette">
+    Bring your own UI components and styles. Works with Tailwind CSS, CSS Modules, styled-components, or plain CSS.
+  </Card>
+  
+  <Card title="TypeScript support" icon="code">
+    Full type safety and excellent developer experience with comprehensive TypeScript definitions.
+  </Card>
+  
+  <Card title="Lightweight" icon="feather">
+    Minimal bundle size with zero external dependencies. Only requires React as a peer dependency.
+  </Card>
+  
+  <Card title="Configurable" icon="sliders">
+    Customizable behavior including hide delay, positioning functions, and click-outside handling.
+  </Card>
+</CardGroup>
+
+## Core concepts
+
+### Global state pattern
+
+Blumbaben uses a singleton pattern to manage toolbar state globally. This ensures only one toolbar is visible at a time across your entire application, providing a clean and focused user experience.
+
+```tsx
+// Multiple inputs automatically share the same toolbar
+<input {...getInputProps()} />
+<textarea {...getInputProps()} />
+<input {...getInputProps()} />
+
+{/* Single toolbar renders conditionally */}
+{isVisible && <div>Toolbar content</div>}
+```
+
+### Formatter functions
+
+The core pattern of Blumbaben is the `FormatterFunction` - a simple function that transforms text:
+
+```typescript
+type FormatterFunction = (text: string) => string;
+
+// Examples
+const bold = (text: string) => `**${text}**`;
+const uppercase = (text: string) => text.toUpperCase();
+const trim = (text: string) => text.trim();
+```
+
+### Main exports
+
+Blumbaben provides multiple ways to integrate formatting toolbars into your application:
+
+- **`useFormattingToolbar`** - Main hook with full functionality
+- **`useFormattingToolbarState`** - Lightweight state-only hook for toolbar components
+- **`FormattingToolbar`** - Ready-to-use component with automatic positioning
+- **`withFormattingToolbar`** - Higher-order component for wrapping existing inputs
+
+## Quick links
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Install Blumbaben with npm, yarn, pnpm, or bun
+  </Card>
+  
+  <Card title="Quick start" icon="rocket" href="/quickstart">
+    Get up and running with Blumbaben in minutes
+  </Card>
+  
+  <Card title="GitHub" icon="github" href="https://github.com/ragaeeb/blumbaben">
+    View the source code and contribute on GitHub
+  </Card>
+  
+  <Card title="Demo" icon="display" href="https://blumbaben.vercel.app">
+    Explore the live Storybook showcase
+  </Card>
+</CardGroup>
+
+## Use cases
+
+Blumbaben is perfect for:
+
+- **Comment and messaging interfaces** - Add quick text formatting options
+- **Form builders** - Provide inline text transformation tools
+- **Content editors** - Lightweight formatting for textareas
+- **Data entry applications** - Quick text cleanup and standardization
+- **Note-taking apps** - Markdown formatting shortcuts
+
+<Info>
+  Blumbaben is MIT licensed and maintained by [Ragaeeb Haq](https://github.com/ragaeeb).
+</Info>

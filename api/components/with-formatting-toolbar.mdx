@@ -1,0 +1,218 @@
+---
+title: withFormattingToolbar
+description: API reference for the withFormattingToolbar HOC
+---
+
+# withFormattingToolbar
+
+Higher-order component (HOC) that adds formatting toolbar functionality to input components. Since the library uses global state, all wrapped components automatically share the same toolbar. Only one toolbar will be visible at a time, appearing for whichever input is currently focused.
+
+## Import
+
+```typescript
+import { withFormattingToolbar } from 'blumbaben';
+```
+
+## Signature
+
+```typescript
+const withFormattingToolbar = <P extends Record<string, unknown> & FocusHandlers>(
+  Component: React.ComponentType<P>,
+  config?: ToolbarConfig
+) => React.ForwardRefExoticComponent
+```
+
+## Parameters
+
+<ParamField path="Component" type="React.ComponentType<P>" required>
+  The input component to enhance with toolbar functionality. The component should accept standard input/textarea props including `onFocus` and `onBlur` handlers.
+</ParamField>
+
+<ParamField path="config" type="ToolbarConfig" default="{}">
+  Optional configuration for toolbar behavior.
+
+  See [ToolbarConfig](/api/types#toolbarconfig) for available options:
+  - `hideDelay` - Delay before hiding toolbar after blur (default: 500ms)
+  - `getPosition` - Custom positioning function
+  - `preventCloseOnClick` - Prevent toolbar from closing on click (default: true)
+</ParamField>
+
+## Return Value
+
+Returns a `React.ForwardRefExoticComponent` - Enhanced component with toolbar functionality that forwards refs to the wrapped component.
+
+## TypeScript Interfaces
+
+### FocusHandlers
+
+```typescript
+type FocusHandlers = {
+  onBlur?: (event: React.FocusEvent<TextInputElement>) => void;
+  onFocus?: (event: React.FocusEvent<TextInputElement>) => void;
+};
+```
+
+<Note>
+  The wrapped component's props type must extend `FocusHandlers`, ensuring it can handle focus and blur events. The HOC will chain these handlers with the toolbar's handlers.
+</Note>
+
+## Behavior
+
+- **Global State**: All wrapped instances share the same global toolbar state
+- **Event Chaining**: Preserves existing `onFocus` and `onBlur` handlers from the wrapped component
+- **Ref Forwarding**: Supports ref forwarding to access the underlying input element
+- **Display Name**: Sets a descriptive display name for better debugging: `withFormattingToolbar(ComponentName)`
+
+## Basic Example
+
+```typescript
+import { Textarea } from './ui/textarea';
+import { withFormattingToolbar } from 'blumbaben';
+
+const TextareaWithToolbar = withFormattingToolbar(Textarea);
+
+// Usage
+function MyComponent() {
+  const [content, setContent] = useState('');
+
+  return (
+    <TextareaWithToolbar
+      value={content}
+      onChange={(e) => setContent(e.target.value)}
+      placeholder="Start typing..."
+    />
+  );
+}
+```
+
+## Example with Configuration
+
+```typescript
+import { Textarea } from './ui/textarea';
+import { withFormattingToolbar } from 'blumbaben';
+
+const TextareaWithToolbar = withFormattingToolbar(Textarea, {
+  hideDelay: 300,
+  getPosition: (element) => {
+    const rect = element.getBoundingClientRect();
+    return { x: rect.left, y: rect.top - 50 }; // Above the element
+  }
+});
+
+// Usage
+<TextareaWithToolbar
+  value={content}
+  onChange={setContent}
+  placeholder="Start typing..."
+/>
+```
+
+## Example with Ref Forwarding
+
+```typescript
+import { useRef } from 'react';
+import { Input } from './ui/input';
+import { withFormattingToolbar } from 'blumbaben';
+
+const InputWithToolbar = withFormattingToolbar(Input);
+
+function MyComponent() {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const focusInput = () => {
+    inputRef.current?.focus();
+  };
+
+  return (
+    <>
+      <InputWithToolbar ref={inputRef} />
+      <button onClick={focusInput}>Focus Input</button>
+    </>
+  );
+}
+```
+
+## Example with Custom Event Handlers
+
+```typescript
+import { Textarea } from './ui/textarea';
+import { withFormattingToolbar } from 'blumbaben';
+
+const TextareaWithToolbar = withFormattingToolbar(Textarea);
+
+function MyComponent() {
+  const [content, setContent] = useState('');
+  const [isFocused, setIsFocused] = useState(false);
+
+  return (
+    <TextareaWithToolbar
+      value={content}
+      onChange={(e) => setContent(e.target.value)}
+      onFocus={() => {
+        console.log('Input focused');
+        setIsFocused(true);
+      }}
+      onBlur={() => {
+        console.log('Input blurred');
+        setIsFocused(false);
+      }}
+      placeholder="Start typing..."
+    />
+  );
+}
+```
+
+<Tip>
+  The HOC automatically chains your custom `onFocus` and `onBlur` handlers with the toolbar's handlers, so you don't need to worry about breaking toolbar functionality when adding your own event handlers.
+</Tip>
+
+## Advanced: Type-Safe Wrapping
+
+```typescript
+import { withFormattingToolbar } from 'blumbaben';
+
+// Define your component props
+interface MyInputProps {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  onFocus?: (event: React.FocusEvent<HTMLInputElement>) => void;
+  onBlur?: (event: React.FocusEvent<HTMLInputElement>) => void;
+}
+
+// Your component
+const MyInput: React.FC<MyInputProps> = (props) => {
+  return <input {...props} />;
+};
+
+// Wrap with toolbar functionality
+const MyInputWithToolbar = withFormattingToolbar(MyInput, {
+  hideDelay: 200,
+});
+
+// TypeScript knows all the props
+<MyInputWithToolbar
+  value={text}
+  onChange={setText}
+  placeholder="Type here"
+/>
+```
+
+## How It Works
+
+1. **Hook Integration**: The HOC uses `useFormattingToolbar` internally to get input props
+2. **Props Merging**: Merges toolbar props with the component's props
+3. **Event Chaining**: Calls toolbar handlers first, then calls the component's original handlers
+4. **Ref Forwarding**: Forwards refs to the underlying component using `React.forwardRef`
+5. **Global State**: Subscribes to the global toolbar manager for state updates
+
+<Note>
+  The HOC is ideal when you want to add toolbar functionality to existing input components without modifying their implementation. For more control, use the [useFormattingToolbar](/api/hooks/use-formatting-toolbar) hook directly.
+</Note>
+
+## Related
+
+- [FormattingToolbar](/api/components/formatting-toolbar) - Ready-to-use toolbar component
+- [useFormattingToolbar](/api/hooks/use-formatting-toolbar) - Hook for manual integration
+- [ToolbarConfig](/api/types#toolbarconfig) - Configuration options
+- [TextInputElement](/api/types#textinputelement) - Supported input element types

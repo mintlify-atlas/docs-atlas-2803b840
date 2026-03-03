@@ -1,0 +1,267 @@
+---
+title: Basic Usage
+description: Learn the fundamental patterns for using Blumbaben in your React applications
+---
+
+Blumbaben provides multiple ways to add formatting toolbars to your inputs. This guide covers the core usage patterns with both the hook and component approaches.
+
+## Installation
+
+First, install Blumbaben in your project:
+
+<CodeGroup>
+```bash npm
+npm install blumbaben
+```
+
+```bash bun
+bun add blumbaben
+```
+
+```bash pnpm
+pnpm add blumbaben
+```
+</CodeGroup>
+
+## Using the Hook
+
+The `useFormattingToolbar` hook provides complete control over toolbar functionality.
+
+### Basic Hook Example
+
+```tsx
+import React, { useState } from 'react';
+import { useFormattingToolbar } from 'blumbaben';
+
+function MyComponent() {
+    const [content, setContent] = useState('');
+    const { getInputProps, isVisible, applyFormat } = useFormattingToolbar();
+
+    return (
+        <div>
+            <textarea
+                {...getInputProps()}
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="Focus me to see the toolbar!"
+            />
+
+            {isVisible && (
+                <div className="toolbar">
+                    <button onClick={() => applyFormat((text) => text.toUpperCase())}>
+                        UPPERCASE
+                    </button>
+                    <button onClick={() => applyFormat((text) => `**${text}**`)}>
+                        Bold
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+}
+```
+
+### Understanding getInputProps()
+
+The `getInputProps()` function returns props that handle focus and blur events:
+
+```tsx
+const inputProps = getInputProps();
+// Returns: { onFocus: Function, onBlur: Function }
+
+<textarea {...inputProps} />
+// Equivalent to:
+<textarea 
+  onFocus={handleFocus}
+  onBlur={handleBlur}
+/>
+```
+
+<Note>
+You can spread `getInputProps()` on any `<input>` or `<textarea>` element. The library automatically manages toolbar visibility based on focus state.
+</Note>
+
+## Using the Component
+
+The `FormattingToolbar` component provides a ready-to-use toolbar with automatic positioning.
+
+### Basic Component Example
+
+```tsx
+import React, { useState } from 'react';
+import { useFormattingToolbar, FormattingToolbar } from 'blumbaben';
+
+function MyComponent() {
+    const [content, setContent] = useState('');
+    const { getInputProps } = useFormattingToolbar();
+
+    return (
+        <div>
+            <textarea
+                {...getInputProps()}
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="Focus me to see the toolbar!"
+            />
+
+            <FormattingToolbar>
+                {(applyFormat) => (
+                    <div className="flex gap-2 p-2 bg-white border rounded shadow">
+                        <button
+                            onClick={() => applyFormat((text) => text.toUpperCase())}
+                            className="px-2 py-1 bg-blue-500 text-white rounded"
+                        >
+                            UPPERCASE
+                        </button>
+                        <button
+                            onClick={() => applyFormat((text) => `**${text}**`)}
+                            className="px-2 py-1 bg-green-500 text-white rounded"
+                        >
+                            Bold
+                        </button>
+                        <button
+                            onClick={() => applyFormat((text) => text.replace(/\n/g, ' '))}
+                            className="px-2 py-1 bg-red-500 text-white rounded"
+                        >
+                            Remove Line Breaks
+                        </button>
+                    </div>
+                )}
+            </FormattingToolbar>
+        </div>
+    );
+}
+```
+
+## Using the Higher-Order Component
+
+Wrap existing input components with `withFormattingToolbar` to add toolbar support.
+
+```tsx
+import React, { useState } from 'react';
+import { withFormattingToolbar, FormattingToolbar } from 'blumbaben';
+
+// Your existing textarea component
+const MyTextarea = ({ value, onChange, ...props }) => (
+    <textarea value={value} onChange={onChange} {...props} />
+);
+
+// Enhance it with toolbar support
+const TextareaWithToolbar = withFormattingToolbar(MyTextarea);
+
+function App() {
+    const [content, setContent] = useState('');
+
+    return (
+        <div>
+            <TextareaWithToolbar
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="Focus me to see the toolbar!"
+            />
+
+            <FormattingToolbar>
+                {(applyFormat) => (
+                    <div className="toolbar-buttons">
+                        <button onClick={() => applyFormat((text) => text.toUpperCase())}>
+                            UPPERCASE
+                        </button>
+                        <button onClick={() => applyFormat((text) => text.toLowerCase())}>
+                            lowercase
+                        </button>
+                    </div>
+                )}
+            </FormattingToolbar>
+        </div>
+    );
+}
+```
+
+## Common Formatting Functions
+
+Here are some useful formatter functions you can use with `applyFormat`:
+
+<Tabs>
+  <Tab title="Text Transforms">
+    ```tsx
+    // Case transformations
+    const toUpperCase = (text: string) => text.toUpperCase();
+    const toLowerCase = (text: string) => text.toLowerCase();
+    const toTitleCase = (text: string) =>
+        text.replace(/\w\S*/g, (txt) => 
+            txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
+        );
+
+    // Usage
+    <button onClick={() => applyFormat(toUpperCase)}>ABC</button>
+    ```
+  </Tab>
+  
+  <Tab title="Markdown">
+    ```tsx
+    // Markdown formatting
+    const makeBold = (text: string) => `**${text}**`;
+    const makeItalic = (text: string) => `*${text}*`;
+    const makeCode = (text: string) => `\`${text}\``;
+    const makeLink = (text: string) => `[${text}](url)`;
+
+    // Usage
+    <button onClick={() => applyFormat(makeBold)}>Bold</button>
+    ```
+  </Tab>
+  
+  <Tab title="Text Cleaning">
+    ```tsx
+    // Text cleaning utilities
+    const removeLineBreaks = (text: string) => text.replace(/\n/g, ' ');
+    const trimWhitespace = (text: string) => text.trim();
+    const removeExtraSpaces = (text: string) => text.replace(/\s+/g, ' ');
+
+    // Usage
+    <button onClick={() => applyFormat(trimWhitespace)}>Trim</button>
+    ```
+  </Tab>
+</Tabs>
+
+## How It Works
+
+Blumbaben uses a global state pattern to manage a single toolbar across your entire application:
+
+<Steps>
+  <Step title="Focus an Input">
+    When you focus on an input with `{...getInputProps()}`, the library stores a reference to that element globally.
+  </Step>
+  
+  <Step title="Toolbar Appears">
+    The `FormattingToolbar` component automatically renders at the correct position based on the focused element.
+  </Step>
+  
+  <Step title="Apply Formatting">
+    When you click a toolbar button, `applyFormat()` transforms either the selected text or the entire content.
+  </Step>
+  
+  <Step title="Toolbar Hides">
+    When you blur the input (or after a configurable delay), the toolbar automatically hides.
+  </Step>
+</Steps>
+
+<Note>
+Only one toolbar can be visible at a time across your entire application. When you focus a different input, the toolbar repositions automatically.
+</Note>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Multiple Inputs" icon="input-text" href="/guides/multiple-inputs">
+    Learn how to use one toolbar across multiple input fields
+  </Card>
+  <Card title="Custom Positioning" icon="arrows-to-dot" href="/guides/custom-positioning">
+    Customize where the toolbar appears
+  </Card>
+  <Card title="Styling" icon="paintbrush" href="/guides/styling">
+    Style your toolbar with Tailwind, CSS modules, and more
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/hooks/use-formatting-toolbar">
+    Explore all available props and configuration options
+  </Card>
+</CardGroup>

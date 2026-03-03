@@ -1,0 +1,264 @@
+---
+title: 'Global State Management'
+description: 'Understanding the singleton pattern and globalToolbarManager'
+---
+
+## Overview
+
+Blumbaben uses a **singleton pattern** to manage formatting toolbar state globally. This ensures that only one toolbar is visible at a time across your entire application, providing a consistent and intuitive user experience.
+
+## The Singleton Pattern
+
+The `globalToolbarManager` is a single instance that serves as the central source of truth for all formatting toolbars:
+
+```
+┌─────────────────────┐     subscribes     ┌────────────────────┐
+│  Input A            │──────────────────▶│                    │
+│  (useFormattingToolbar)                 │ globalToolbarManager│
+├─────────────────────┤                   │  (singleton)        │
+│  Input B            │──────────────────▶│                    │
+│  (useFormattingToolbar)                 └────────────────────┘
+├─────────────────────┤                            │
+│  FormattingToolbar  │◀───────────────────────────┘
+│  (component)        │         state updates
+└─────────────────────┘
+```
+
+<Info>
+All hooks and components subscribe to the same `globalToolbarManager` instance, ensuring synchronized state across your application.
+</Info>
+
+## Implementation
+
+The `GlobalToolbarManager` class implements the following interface:
+
+```typescript
+type ToolbarStateManager = {
+    // Apply a formatting function to the currently active element
+    applyFormat(
+        formatter: FormatterFunction,
+        onChange?: (e: React.ChangeEvent<TextInputElement>) => void,
+    ): void;
+
+    // Cancel any scheduled toolbar hide operation
+    cancelScheduledHide(): void;
+
+    // Get the current toolbar state
+    getState(): ToolbarState;
+
+    // Immediately hide the toolbar
+    hideToolbar(): void;
+
+    // Schedule the toolbar to hide after a delay
+    scheduleHide(delay: number): void;
+
+    // Show the toolbar for a specific element
+    showToolbar(
+        element: TextInputElement,
+        getPosition: (element: TextInputElement) => ToolbarPosition,
+    ): void;
+
+    // Subscribe to toolbar state changes
+    subscribe(callback: (state: ToolbarState) => void): () => void;
+};
+```
+
+## Toolbar State
+
+The global state tracks three key pieces of information:
+
+```typescript
+type ToolbarState = {
+    // The currently focused input/textarea element, or null if no element is active
+    activeElement: null | TextInputElement;
+    
+    // Whether the toolbar is currently visible to the user
+    isVisible: boolean;
+    
+    // Current position of the toolbar, or null if not positioned
+    position: null | ToolbarPosition;
+};
+```
+
+## How It Works
+
+### 1. Subscription Pattern
+
+Components subscribe to state changes using the observer pattern:
+
+```typescript
+useEffect(() => {
+    const unsubscribe = globalToolbarManager.subscribe(setToolbarState);
+    return unsubscribe;
+}, []);
+```
+
+When the state changes, all subscribers are notified:
+
+```typescript
+private setState(newState: Partial<ToolbarState>): void {
+    this.state = { ...this.state, ...newState };
+    this.subscribers.forEach((callback) => {
+        callback(this.getState());
+    });
+}
+```
+
+### 2. Showing the Toolbar
+
+When an input receives focus, it calls `showToolbar` with the element:
+
+```typescript
+showToolbar(
+    element: TextInputElement,
+    getPosition: (element: TextInputElement) => ToolbarPosition = defaultGetPosition,
+): void {
+    this.clearHideTimeout();
+
+    // Store the onChange handler from the element for later use
+    const elementWithProps = element as TextInputElement & {
+        props?: {
+            onChange?: (e: React.ChangeEvent<TextInputElement>) => void;
+        };
+    };
+    this.activeElementOnChange = elementWithProps.props?.onChange;
+
+    this.setState({
+        activeElement: element,
+        isVisible: true,
+        position: getPosition(element),
+    });
+}
+```
+
+### 3. Hiding the Toolbar
+
+The toolbar can be hidden immediately or after a delay:
+
+```typescript
+// Immediate hide
+hideToolbar(): void {
+    this.clearHideTimeout();
+    this.activeElementOnChange = undefined;
+    this.setState({
+        activeElement: null,
+        isVisible: false,
+        position: null,
+    });
+}
+
+// Delayed hide (allows clicking toolbar buttons)
+scheduleHide(delay: number): void {
+    this.clearHideTimeout();
+    this.hideTimeout = setTimeout(() => this.hideToolbar(), delay);
+}
+```
+
+<Tip>
+The default `hideDelay` is 500ms, giving users enough time to move their mouse from the input to the toolbar buttons.
+</Tip>
+
+### 4. Applying Formatting
+
+When a formatter is applied, it operates on the active element:
+
+```typescript
+applyFormat(
+    formatter: FormatterFunction,
+    onChange?: (e: React.ChangeEvent<TextInputElement>) => void,
+): void {
+    const { activeElement } = this.state;
+
+    if (!activeElement) {
+        console.warn('No active element found for formatting');
+        return;
+    }
+
+    const newValue = applyFormattingOnSelection(activeElement, formatter);
+
+    // Use provided onChange or the stored one from the element
+    const onChangeHandler = onChange || this.activeElementOnChange;
+    updateElementValue(activeElement, newValue, onChangeHandler);
+
+    // Keep focus on the element after formatting
+    activeElement.focus();
+}
+```
+
+## Benefits of Global State
+
+<CardGroup cols={2}>
+  <Card title="Single Toolbar" icon="window">
+    Only one toolbar visible at a time prevents UI clutter and confusion
+  </Card>
+  
+  <Card title="No Prop Drilling" icon="arrow-down">
+    Toolbar and inputs don't need to be in the same component tree
+  </Card>
+  
+  <Card title="Separation of Concerns" icon="layer-group">
+    Input handling and toolbar rendering are completely decoupled
+  </Card>
+  
+  <Card title="Simplified API" icon="code">
+    No need to pass callbacks or state through your component hierarchy
+  </Card>
+</CardGroup>
+
+## Usage Example
+
+You rarely interact with `globalToolbarManager` directly. Instead, use the hooks:
+
+```typescript
+import { useFormattingToolbar } from 'blumbaben';
+
+function MyComponent() {
+    const { getInputProps, isVisible, applyFormat } = useFormattingToolbar();
+
+    return (
+        <div>
+            <textarea {...getInputProps()} />
+            {isVisible && (
+                <div>
+                    <button onClick={() => applyFormat(text => text.toUpperCase())}>
+                        UPPERCASE
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+}
+```
+
+<Note>
+The `useFormattingToolbar` hook automatically subscribes to the global state and provides a clean API for interacting with the toolbar.
+</Note>
+
+## Advanced: Direct Access
+
+For advanced use cases, you can import and use the global manager directly:
+
+```typescript
+import { globalToolbarManager } from 'blumbaben';
+
+// Show toolbar for an element
+globalToolbarManager.showToolbar(textareaElement);
+
+// Apply formatting
+globalToolbarManager.applyFormat((text) => text.toUpperCase());
+
+// Get current state
+const state = globalToolbarManager.getState();
+```
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Formatter Functions" icon="wand-magic-sparkles" href="/concepts/formatter-functions">
+    Learn how to write custom text transformation functions
+  </Card>
+  
+  <Card title="Positioning" icon="location-dot" href="/concepts/positioning">
+    Customize where the toolbar appears on screen
+  </Card>
+</CardGroup>

@@ -1,0 +1,405 @@
+---
+title: Multiple Input Fields
+description: Manage a single formatting toolbar across multiple input fields in your application
+---
+
+One of Blumbaben's key features is its ability to share a single toolbar instance across multiple input fields. This guide shows you how to leverage this powerful pattern.
+
+## Global Toolbar Management
+
+Blumbaben uses a global state manager (`globalToolbarManager`) to ensure only one toolbar is visible at a time. This provides a clean, consistent user experience without the overhead of multiple toolbar instances.
+
+### How It Works
+
+```
+┌─────────────────────┐     subscribes     ┌────────────────────┐
+│  Input A            │──────────────────▶│                    │
+│  (useFormattingToolbar)                 │ globalToolbarManager│
+├─────────────────────┤                   │  (singleton)        │
+│  Input B            │──────────────────▶│                    │
+│  (useFormattingToolbar)                 └────────────────────┘
+├─────────────────────┤                            │
+│  FormattingToolbar  │◀───────────────────────────┘
+│  (component)        │         state updates
+└─────────────────────┘
+```
+
+## Basic Multi-Input Setup
+
+The simplest way to use one toolbar with multiple inputs is to call `getInputProps()` on each field:
+
+```tsx
+import React, { useState } from 'react';
+import { useFormattingToolbar, FormattingToolbar } from 'blumbaben';
+
+function MultiInputForm() {
+    const { getInputProps } = useFormattingToolbar();
+    const [field1, setField1] = useState('');
+    const [field2, setField2] = useState('');
+
+    return (
+        <div>
+            <input
+                {...getInputProps()}
+                value={field1}
+                onChange={(e) => setField1(e.target.value)}
+                placeholder="First field"
+            />
+
+            <textarea
+                {...getInputProps()}
+                value={field2}
+                onChange={(e) => setField2(e.target.value)}
+                placeholder="Second field"
+            />
+
+            <FormattingToolbar>
+                {(applyFormat) => (
+                    <div className="flex gap-2 p-2 bg-white border rounded shadow">
+                        <button onClick={() => applyFormat((text) => text.toUpperCase())}>
+                            UPPERCASE
+                        </button>
+                        <button onClick={() => applyFormat((text) => text.toLowerCase())}>
+                            lowercase
+                        </button>
+                    </div>
+                )}
+            </FormattingToolbar>
+        </div>
+    );
+}
+```
+
+<Note>
+You only need to call `useFormattingToolbar()` once, even with multiple inputs. Simply spread `{...getInputProps()}` on each input or textarea element.
+</Note>
+
+## Form with Multiple Fields
+
+Here's a more realistic example with a multi-field form:
+
+```tsx
+import React, { useState } from 'react';
+import { useFormattingToolbar, FormattingToolbar } from 'blumbaben';
+
+interface FormData {
+    title: string;
+    description: string;
+    notes: string;
+}
+
+function ArticleForm() {
+    const { getInputProps } = useFormattingToolbar();
+    const [formData, setFormData] = useState<FormData>({
+        title: '',
+        description: '',
+        notes: '',
+    });
+
+    const updateField = (field: keyof FormData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        setFormData(prev => ({ ...prev, [field]: e.target.value }));
+    };
+
+    return (
+        <div className="max-w-2xl mx-auto p-6">
+            <div className="space-y-4">
+                <div>
+                    <label className="block text-sm font-medium mb-1">Title</label>
+                    <input
+                        {...getInputProps()}
+                        type="text"
+                        value={formData.title}
+                        onChange={updateField('title')}
+                        className="w-full p-2 border rounded"
+                        placeholder="Enter article title"
+                    />
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium mb-1">Description</label>
+                    <textarea
+                        {...getInputProps()}
+                        value={formData.description}
+                        onChange={updateField('description')}
+                        className="w-full p-2 border rounded"
+                        rows={3}
+                        placeholder="Brief description"
+                    />
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium mb-1">Notes</label>
+                    <textarea
+                        {...getInputProps()}
+                        value={formData.notes}
+                        onChange={updateField('notes')}
+                        className="w-full p-2 border rounded"
+                        rows={5}
+                        placeholder="Additional notes"
+                    />
+                </div>
+            </div>
+
+            <FormattingToolbar>
+                {(applyFormat) => (
+                    <div className="flex gap-2 p-2 bg-white border rounded shadow-lg">
+                        <button
+                            onClick={() => applyFormat((text) => text.toUpperCase())}
+                            className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                        >
+                            ABC
+                        </button>
+                        <button
+                            onClick={() => applyFormat((text) => text.toLowerCase())}
+                            className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+                        >
+                            abc
+                        </button>
+                        <button
+                            onClick={() => applyFormat((text) => text.trim())}
+                            className="px-3 py-1 bg-purple-500 text-white rounded hover:bg-purple-600"
+                        >
+                            Trim
+                        </button>
+                    </div>
+                )}
+            </FormattingToolbar>
+        </div>
+    );
+}
+```
+
+## Conditional Toolbar Buttons
+
+You can show different toolbar buttons based on which input is currently focused:
+
+```tsx
+import React, { useState } from 'react';
+import { useFormattingToolbar, FormattingToolbar } from 'blumbaben';
+import { useFormattingToolbarState } from 'blumbaben';
+
+function SmartToolbar() {
+    const { getInputProps } = useFormattingToolbar();
+    const [email, setEmail] = useState('');
+    const [comment, setComment] = useState('');
+
+    return (
+        <div>
+            <input
+                {...getInputProps()}
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Email address"
+                data-field="email"
+            />
+
+            <textarea
+                {...getInputProps()}
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder="Your comment"
+                data-field="comment"
+            />
+
+            <FormattingToolbar>
+                {(applyFormat) => {
+                    const { toolbarState } = useFormattingToolbarState();
+                    const activeElement = toolbarState.activeElement;
+                    const isTextarea = activeElement?.tagName === 'TEXTAREA';
+                    const fieldType = activeElement?.getAttribute('data-field');
+
+                    return (
+                        <div className="flex gap-2 p-2 bg-white border rounded shadow">
+                            {/* Common buttons for all fields */}
+                            <button onClick={() => applyFormat((text) => text.toUpperCase())}>
+                                UPPERCASE
+                            </button>
+                            <button onClick={() => applyFormat((text) => text.toLowerCase())}>
+                                lowercase
+                            </button>
+
+                            {/* Textarea-specific buttons */}
+                            {isTextarea && (
+                                <button onClick={() => applyFormat((text) => text.replace(/\n/g, ' '))}>
+                                    Remove Line Breaks
+                                </button>
+                            )}
+
+                            {/* Email-specific buttons */}
+                            {fieldType === 'email' && (
+                                <button onClick={() => applyFormat((text) => text.trim())}>
+                                    Trim Spaces
+                                </button>
+                            )}
+                        </div>
+                    );
+                }}
+            </FormattingToolbar>
+        </div>
+    );
+}
+```
+
+## Dynamic Input Lists
+
+You can even use the toolbar with dynamically generated input lists:
+
+```tsx
+import React, { useState } from 'react';
+import { useFormattingToolbar, FormattingToolbar } from 'blumbaben';
+
+function TodoList() {
+    const { getInputProps } = useFormattingToolbar();
+    const [todos, setTodos] = useState(['', '', '']);
+
+    const updateTodo = (index: number) => (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newTodos = [...todos];
+        newTodos[index] = e.target.value;
+        setTodos(newTodos);
+    };
+
+    const addTodo = () => setTodos([...todos, '']);
+
+    return (
+        <div className="space-y-2">
+            {todos.map((todo, index) => (
+                <input
+                    key={index}
+                    {...getInputProps()}
+                    type="text"
+                    value={todo}
+                    onChange={updateTodo(index)}
+                    placeholder={`Todo ${index + 1}`}
+                    className="w-full p-2 border rounded"
+                />
+            ))}
+
+            <button onClick={addTodo} className="px-4 py-2 bg-blue-500 text-white rounded">
+                Add Todo
+            </button>
+
+            <FormattingToolbar>
+                {(applyFormat) => (
+                    <div className="flex gap-2 p-2 bg-white border rounded shadow">
+                        <button onClick={() => applyFormat((text) => `• ${text}`)}>
+                            Add Bullet
+                        </button>
+                        <button onClick={() => applyFormat((text) => text.trim())}>
+                            Trim
+                        </button>
+                    </div>
+                )}
+            </FormattingToolbar>
+        </div>
+    );
+}
+```
+
+## Multiple Components
+
+You can use multiple instances of `useFormattingToolbar()` across different components. They all share the same global toolbar state:
+
+```tsx
+// CommentSection.tsx
+import { useFormattingToolbar } from 'blumbaben';
+
+export function CommentSection() {
+    const { getInputProps } = useFormattingToolbar();
+    const [comment, setComment] = useState('');
+
+    return (
+        <textarea
+            {...getInputProps()}
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            placeholder="Write a comment"
+        />
+    );
+}
+
+// EmailField.tsx
+import { useFormattingToolbar } from 'blumbaben';
+
+export function EmailField() {
+    const { getInputProps } = useFormattingToolbar();
+    const [email, setEmail] = useState('');
+
+    return (
+        <input
+            {...getInputProps()}
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email address"
+        />
+    );
+}
+
+// App.tsx
+import { FormattingToolbar } from 'blumbaben';
+import { CommentSection } from './CommentSection';
+import { EmailField } from './EmailField';
+
+function App() {
+    return (
+        <div>
+            <EmailField />
+            <CommentSection />
+
+            {/* Single toolbar serves both components */}
+            <FormattingToolbar>
+                {(applyFormat) => (
+                    <div className="toolbar">
+                        <button onClick={() => applyFormat((text) => text.toUpperCase())}>
+                            UPPERCASE
+                        </button>
+                    </div>
+                )}
+            </FormattingToolbar>
+        </div>
+    );
+}
+```
+
+## Key Behaviors
+
+<Steps>
+  <Step title="Single Toolbar Instance">
+    Only one toolbar is visible at a time across your entire application, regardless of how many inputs you have.
+  </Step>
+  
+  <Step title="Automatic Repositioning">
+    When you focus a different input, the toolbar automatically repositions to that element.
+  </Step>
+  
+  <Step title="Global State Sharing">
+    All `useFormattingToolbar()` calls share the same global state - no prop drilling needed.
+  </Step>
+  
+  <Step title="Component Separation">
+    Input components and toolbar components can be placed anywhere in your component tree.
+  </Step>
+</Steps>
+
+<Note>
+The global state pattern ensures consistent UX and optimal performance. You don't need to worry about managing multiple toolbar instances or synchronizing state.
+</Note>
+
+## Best Practices
+
+1. **Use a single `useFormattingToolbar()` call** when possible to keep your code simple
+2. **Spread `getInputProps()` on each input** that should support the toolbar
+3. **Use `toolbarState.activeElement`** to conditionally show buttons based on the focused input
+4. **Add data attributes** to inputs if you need to identify which field is focused
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Custom Positioning" icon="arrows-to-dot" href="/guides/custom-positioning">
+    Learn how to customize toolbar positioning
+  </Card>
+  <Card title="Styling" icon="paintbrush" href="/guides/styling">
+    Style your toolbar with various CSS approaches
+  </Card>
+</CardGroup>

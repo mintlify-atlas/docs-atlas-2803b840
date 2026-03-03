@@ -1,0 +1,381 @@
+---
+title: 'useFormattingToolbar'
+description: 'Main hook for managing formatting toolbar functionality with full control over inputs and toolbar visibility'
+---
+
+## Overview
+
+`useFormattingToolbar` is the primary hook for integrating formatting toolbar functionality into your React components. It provides complete control over input element behavior, toolbar visibility, and text formatting operations.
+
+This hook uses a global state pattern, ensuring only one toolbar instance is visible at a time across your entire application. All hook instances share the same global toolbar state.
+
+## Import
+
+```typescript
+import { useFormattingToolbar } from 'blumbaben';
+```
+
+## Signature
+
+```typescript
+function useFormattingToolbar(
+  config?: ToolbarConfig
+): UseFormattingToolbarResult
+```
+
+## Parameters
+
+<ParamField path="config" type="ToolbarConfig" default="{}">
+  Optional configuration object for customizing toolbar behavior.
+  
+  <ParamField path="config.getPosition" type="(element: TextInputElement) => ToolbarPosition">
+    Custom positioning function that determines where the toolbar appears relative to the focused element.
+    
+    **Default behavior**: Places the toolbar 5px below the focused element's bottom edge.
+    
+    ```typescript
+    // Default implementation
+    const defaultGetPosition = (element) => {
+      const rect = element.getBoundingClientRect();
+      return {
+        x: rect.left,
+        y: rect.bottom + 5
+      };
+    };
+    
+    // Custom example: Position above the element
+    const config = {
+      getPosition: (element) => {
+        const rect = element.getBoundingClientRect();
+        return {
+          x: rect.left,
+          y: rect.top - 50
+        };
+      }
+    };
+    ```
+  </ParamField>
+  
+  <ParamField path="config.hideDelay" type="number" default="500">
+    Delay in milliseconds before hiding the toolbar after the input loses focus. This allows users to click toolbar buttons without the toolbar disappearing immediately.
+    
+    ```typescript
+    // Quick hide after 200ms
+    const config = { hideDelay: 200 };
+    
+    // Longer delay for better UX
+    const config = { hideDelay: 1000 };
+    ```
+  </ParamField>
+  
+  <ParamField path="config.preventCloseOnClick" type="boolean" default="true">
+    Whether to prevent the toolbar from closing when clicked. When `true`, clicking toolbar buttons won't cause the input to lose focus.
+    
+    Setting this to `false` means the toolbar will close when any toolbar button is clicked (generally not recommended for UX).
+  </ParamField>
+</ParamField>
+
+## Return Value
+
+Returns a `UseFormattingToolbarResult` object with the following properties:
+
+<ResponseField name="getInputProps" type="() => { onFocus, onBlur }">
+  Function that returns props to spread on your input or textarea elements. These props include `onFocus` and `onBlur` handlers for automatic toolbar management.
+  
+  ```typescript
+  const { getInputProps } = useFormattingToolbar();
+  
+  <textarea {...getInputProps()} />
+  ```
+  
+  The returned object contains:
+  - `onFocus`: Handler that shows the toolbar when input receives focus
+  - `onBlur`: Handler that schedules toolbar hiding when input loses focus
+</ResponseField>
+
+<ResponseField name="getToolbarProps" type="() => { style, onMouseDown? }">
+  Function that returns props for the toolbar container element. Includes positioning styles and optional mouse event handlers.
+  
+  ```typescript
+  const { getToolbarProps, isVisible } = useFormattingToolbar();
+  
+  {isVisible && (
+    <div {...getToolbarProps()}>
+      {/* Toolbar buttons */}
+    </div>
+  )}
+  ```
+  
+  The returned object contains:
+  - `style`: React CSS properties with `position: 'fixed'`, `left`, `top`, and `zIndex: 1000`
+  - `onMouseDown`: Optional mouse event handler (included when `preventCloseOnClick` is `true`) that prevents blur events
+</ResponseField>
+
+<ResponseField name="applyFormat" type="(formatter: FormatterFunction) => void">
+  Function to apply formatting to the currently active element. Pass a formatter function that transforms text.
+  
+  ```typescript
+  const { applyFormat } = useFormattingToolbar();
+  
+  // Apply uppercase formatting
+  applyFormat(text => text.toUpperCase());
+  
+  // Apply bold markdown formatting
+  applyFormat(text => `**${text}**`);
+  
+  // Custom transformation
+  applyFormat(text => {
+    return text.split(' ').reverse().join(' ');
+  });
+  ```
+  
+  The formatter receives the selected text (or entire content if no selection) and should return the transformed string.
+</ResponseField>
+
+<ResponseField name="showToolbar" type="(element: TextInputElement) => void">
+  Function to manually show the toolbar for a specific element. Typically not needed as `getInputProps()` handles this automatically.
+  
+  ```typescript
+  const { showToolbar } = useFormattingToolbar();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
+  // Manually show toolbar
+  if (textareaRef.current) {
+    showToolbar(textareaRef.current);
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="hideToolbar" type="() => void">
+  Function to manually hide the toolbar immediately (bypasses the `hideDelay`).
+  
+  ```typescript
+  const { hideToolbar } = useFormattingToolbar();
+  
+  // Hide toolbar immediately
+  hideToolbar();
+  ```
+</ResponseField>
+
+<ResponseField name="isVisible" type="boolean">
+  Boolean indicating whether the toolbar is currently visible. Use this to conditionally render your toolbar UI.
+  
+  ```typescript
+  const { isVisible } = useFormattingToolbar();
+  
+  return (
+    <>
+      <textarea {...getInputProps()} />
+      {isVisible && <Toolbar />}
+    </>
+  );
+  ```
+</ResponseField>
+
+<ResponseField name="toolbarState" type="ToolbarState">
+  Current toolbar state object (shared globally across all hook instances).
+  
+  ```typescript
+  type ToolbarState = {
+    isVisible: boolean;
+    position: { x: number; y: number } | null;
+    activeElement: HTMLInputElement | HTMLTextAreaElement | null;
+  }
+  ```
+  
+  - `isVisible`: Whether the toolbar is visible
+  - `position`: Current x/y coordinates, or `null` if not positioned
+  - `activeElement`: The currently focused element, or `null`
+</ResponseField>
+
+## Type Definitions
+
+```typescript
+type FormatterFunction = (text: string) => string;
+
+type TextInputElement = HTMLInputElement | HTMLTextAreaElement;
+
+type ToolbarPosition = {
+  x: number;
+  y: number;
+};
+
+type ToolbarConfig = {
+  getPosition?: (element: TextInputElement) => ToolbarPosition;
+  hideDelay?: number;
+  preventCloseOnClick?: boolean;
+};
+
+type ToolbarState = {
+  activeElement: TextInputElement | null;
+  isVisible: boolean;
+  position: ToolbarPosition | null;
+};
+
+type UseFormattingToolbarResult = {
+  applyFormat: (formatter: FormatterFunction) => void;
+  getInputProps: () => {
+    onFocus: (e: React.FocusEvent<TextInputElement>) => void;
+    onBlur: (e: React.FocusEvent<TextInputElement>) => void;
+  };
+  getToolbarProps: () => {
+    style: React.CSSProperties;
+    onMouseDown?: (e: React.MouseEvent) => void;
+  };
+  hideToolbar: () => void;
+  isVisible: boolean;
+  showToolbar: (element: TextInputElement) => void;
+  toolbarState: ToolbarState;
+};
+```
+
+## Complete Example
+
+```typescript
+import { useFormattingToolbar } from 'blumbaben';
+import { useState } from 'react';
+
+function MyEditor() {
+  const [text, setText] = useState('');
+  
+  const { getInputProps, getToolbarProps, isVisible, applyFormat } = useFormattingToolbar({
+    hideDelay: 300,
+    getPosition: (element) => {
+      const rect = element.getBoundingClientRect();
+      return { x: rect.left, y: rect.bottom + 5 };
+    }
+  });
+
+  return (
+    <div>
+      <textarea
+        {...getInputProps()}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="Start typing..."
+        rows={5}
+      />
+      
+      {isVisible && (
+        <div {...getToolbarProps()} className="toolbar">
+          <button onClick={() => applyFormat(text => text.toUpperCase())}>
+            UPPERCASE
+          </button>
+          <button onClick={() => applyFormat(text => text.toLowerCase())}>
+            lowercase
+          </button>
+          <button onClick={() => applyFormat(text => `**${text}**`)}>
+            Bold
+          </button>
+          <button onClick={() => applyFormat(text => `_${text}_`)}>
+            Italic
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+## Multiple Inputs Example
+
+```typescript
+import { useFormattingToolbar } from 'blumbaben';
+import { useState } from 'react';
+
+function MultiInputForm() {
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  
+  const { getInputProps, getToolbarProps, isVisible, applyFormat } = useFormattingToolbar();
+
+  return (
+    <div>
+      <input
+        {...getInputProps()}
+        type="text"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        placeholder="Title"
+      />
+      
+      <textarea
+        {...getInputProps()}
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+        placeholder="Description"
+        rows={5}
+      />
+      
+      {/* Single toolbar for all inputs */}
+      {isVisible && (
+        <div {...getToolbarProps()} className="formatting-toolbar">
+          <button onClick={() => applyFormat(text => text.toUpperCase())}>
+            UPPER
+          </button>
+          <button onClick={() => applyFormat(text => `**${text}**`)}>
+            Bold
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+<Note>
+  The toolbar uses **global state**, so all instances of `useFormattingToolbar` share the same toolbar. Only one toolbar can be visible at a time across your entire application.
+</Note>
+
+## Advanced: Custom Positioning
+
+```typescript
+import { useFormattingToolbar } from 'blumbaben';
+
+function AdvancedEditor() {
+  const { getInputProps, getToolbarProps, isVisible, applyFormat } = useFormattingToolbar({
+    getPosition: (element) => {
+      const rect = element.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      
+      // Position above if not enough space below
+      const spaceBelow = viewportHeight - rect.bottom;
+      if (spaceBelow < 100) {
+        return {
+          x: rect.left,
+          y: rect.top - 50
+        };
+      }
+      
+      // Default: position below
+      return {
+        x: rect.left,
+        y: rect.bottom + 5
+      };
+    },
+    hideDelay: 1000, // Longer delay for complex toolbars
+  });
+
+  return (
+    <div>
+      <textarea {...getInputProps()} />
+      
+      {isVisible && (
+        <div {...getToolbarProps()} className="toolbar">
+          {/* Complex toolbar with many buttons */}
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+<Warning>
+  When using custom positioning with `getPosition`, ensure your toolbar doesn't overflow the viewport. Consider window boundaries and scroll position for optimal UX.
+</Warning>
+
+## Related
+
+- [useFormattingToolbarState](/api/hooks/use-formatting-toolbar-state) - Lightweight hook for toolbar-only components
+- [FormattingToolbar](/api/components/formatting-toolbar) - Pre-built toolbar component
+- [withFormattingToolbar](/api/components/with-formatting-toolbar) - Higher-order component wrapper

@@ -1,0 +1,364 @@
+---
+title: 'useFormattingToolbarState'
+description: 'Lightweight hook that subscribes to toolbar state without managing input handlers'
+---
+
+## Overview
+
+`useFormattingToolbarState` is a lightweight hook that only subscribes to the global toolbar state. It does not create input handlers or manage focus/blur events.
+
+This hook is perfect for creating standalone toolbar components that need to respond to the global toolbar state managed by `useFormattingToolbar` in other parts of your application.
+
+## Import
+
+```typescript
+import { useFormattingToolbarState } from 'blumbaben';
+```
+
+## Signature
+
+```typescript
+function useFormattingToolbarState(): {
+  applyFormat: (formatter: FormatterFunction) => void;
+  isVisible: boolean;
+  toolbarState: ToolbarState;
+}
+```
+
+## Parameters
+
+This hook accepts no parameters.
+
+## Return Value
+
+Returns an object with the following properties:
+
+<ResponseField name="applyFormat" type="(formatter: FormatterFunction) => void">
+  Function to apply formatting to the currently active element in the global state.
+  
+  ```typescript
+  const { applyFormat } = useFormattingToolbarState();
+  
+  // Apply bold formatting
+  applyFormat(text => `**${text}**`);
+  
+  // Apply uppercase
+  applyFormat(text => text.toUpperCase());
+  ```
+  
+  The formatter function receives the selected text (or entire content if no selection) from the currently active element and should return the transformed string.
+</ResponseField>
+
+<ResponseField name="isVisible" type="boolean">
+  Boolean indicating whether the toolbar is currently visible. Use this to conditionally render your toolbar component.
+  
+  ```typescript
+  const { isVisible } = useFormattingToolbarState();
+  
+  if (!isVisible) return null;
+  
+  return <Toolbar />;
+  ```
+</ResponseField>
+
+<ResponseField name="toolbarState" type="ToolbarState">
+  Current global toolbar state object containing visibility, position, and active element information.
+  
+  ```typescript
+  type ToolbarState = {
+    isVisible: boolean;
+    position: { x: number; y: number } | null;
+    activeElement: HTMLInputElement | HTMLTextAreaElement | null;
+  }
+  ```
+  
+  Use `toolbarState.position` for custom positioning logic:
+  
+  ```typescript
+  const { toolbarState } = useFormattingToolbarState();
+  
+  return (
+    <div 
+      style={{
+        position: 'fixed',
+        top: toolbarState.position?.y,
+        left: toolbarState.position?.x
+      }}
+    >
+      {/* Toolbar content */}
+    </div>
+  );
+  ```
+</ResponseField>
+
+## Type Definitions
+
+```typescript
+type FormatterFunction = (text: string) => string;
+
+type TextInputElement = HTMLInputElement | HTMLTextAreaElement;
+
+type ToolbarPosition = {
+  x: number;
+  y: number;
+};
+
+type ToolbarState = {
+  activeElement: TextInputElement | null;
+  isVisible: boolean;
+  position: ToolbarPosition | null;
+};
+```
+
+## Basic Example
+
+```typescript
+import { useFormattingToolbarState } from 'blumbaben';
+
+function ToolbarComponent() {
+  const { applyFormat, isVisible, toolbarState } = useFormattingToolbarState();
+
+  if (!isVisible) return null;
+
+  return (
+    <div 
+      style={{ 
+        position: 'fixed', 
+        top: toolbarState.position?.y, 
+        left: toolbarState.position?.x,
+        zIndex: 1000
+      }}
+    >
+      <button onClick={() => applyFormat(text => `**${text}**`)}>
+        Bold
+      </button>
+      <button onClick={() => applyFormat(text => `_${text}_`)}>
+        Italic
+      </button>
+      <button onClick={() => applyFormat(text => text.toUpperCase())}>
+        UPPERCASE
+      </button>
+    </div>
+  );
+}
+```
+
+## Usage with Separate Input Component
+
+This hook is ideal when you want to separate your input handling from toolbar rendering:
+
+```typescript
+import { useFormattingToolbar, useFormattingToolbarState } from 'blumbaben';
+import { useState } from 'react';
+
+// Input component uses the full hook
+function EditorInput() {
+  const [text, setText] = useState('');
+  const { getInputProps } = useFormattingToolbar();
+
+  return (
+    <textarea
+      {...getInputProps()}
+      value={text}
+      onChange={(e) => setText(e.target.value)}
+      placeholder="Start typing..."
+    />
+  );
+}
+
+// Toolbar component uses the lightweight hook
+function FormattingToolbar() {
+  const { applyFormat, isVisible, toolbarState } = useFormattingToolbarState();
+
+  if (!isVisible) return null;
+
+  return (
+    <div 
+      className="formatting-toolbar"
+      style={{ 
+        position: 'fixed', 
+        top: toolbarState.position?.y, 
+        left: toolbarState.position?.x 
+      }}
+    >
+      <button onClick={() => applyFormat(text => text.toUpperCase())}>
+        UPPER
+      </button>
+      <button onClick={() => applyFormat(text => text.toLowerCase())}>
+        lower
+      </button>
+      <button onClick={() => applyFormat(text => `**${text}**`)}>
+        Bold
+      </button>
+    </div>
+  );
+}
+
+// App component combines both
+function App() {
+  return (
+    <div>
+      <EditorInput />
+      <FormattingToolbar />
+    </div>
+  );
+}
+```
+
+## Advanced: Custom Toolbar with State
+
+```typescript
+import { useFormattingToolbarState } from 'blumbaben';
+import { useState } from 'react';
+
+function AdvancedToolbar() {
+  const { applyFormat, isVisible, toolbarState } = useFormattingToolbarState();
+  const [activeFormat, setActiveFormat] = useState<string | null>(null);
+
+  if (!isVisible) return null;
+
+  const handleFormat = (name: string, formatter: (text: string) => string) => {
+    setActiveFormat(name);
+    applyFormat(formatter);
+    setTimeout(() => setActiveFormat(null), 200);
+  };
+
+  return (
+    <div 
+      className="toolbar"
+      style={{ 
+        position: 'fixed', 
+        top: toolbarState.position?.y, 
+        left: toolbarState.position?.x,
+        background: 'white',
+        border: '1px solid #ccc',
+        borderRadius: '4px',
+        padding: '8px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+      }}
+    >
+      <button 
+        onClick={() => handleFormat('bold', text => `**${text}**`)}
+        className={activeFormat === 'bold' ? 'active' : ''}
+      >
+        B
+      </button>
+      <button 
+        onClick={() => handleFormat('italic', text => `_${text}_`)}
+        className={activeFormat === 'italic' ? 'active' : ''}
+      >
+        I
+      </button>
+      <button 
+        onClick={() => handleFormat('upper', text => text.toUpperCase())}
+        className={activeFormat === 'upper' ? 'active' : ''}
+      >
+        ABC
+      </button>
+    </div>
+  );
+}
+```
+
+## Accessing Active Element
+
+You can access the currently focused element from the toolbar state:
+
+```typescript
+import { useFormattingToolbarState } from 'blumbaben';
+
+function SmartToolbar() {
+  const { applyFormat, isVisible, toolbarState } = useFormattingToolbarState();
+
+  if (!isVisible) return null;
+
+  const isTextarea = toolbarState.activeElement?.tagName === 'TEXTAREA';
+
+  return (
+    <div style={{ position: 'fixed', top: toolbarState.position?.y, left: toolbarState.position?.x }}>
+      <button onClick={() => applyFormat(text => `**${text}**`)}>
+        Bold
+      </button>
+      
+      {/* Show this button only for textareas */}
+      {isTextarea && (
+        <button onClick={() => applyFormat(text => `# ${text}`)}>
+          Heading
+        </button>
+      )}
+    </div>
+  );
+}
+```
+
+## Portal Rendering Example
+
+```typescript
+import { useFormattingToolbarState } from 'blumbaben';
+import { createPortal } from 'react-dom';
+
+function PortalToolbar() {
+  const { applyFormat, isVisible, toolbarState } = useFormattingToolbarState();
+
+  if (!isVisible) return null;
+
+  const toolbarContent = (
+    <div 
+      style={{ 
+        position: 'fixed', 
+        top: toolbarState.position?.y, 
+        left: toolbarState.position?.x,
+        zIndex: 9999
+      }}
+    >
+      <button onClick={() => applyFormat(text => `**${text}**`)}>
+        Bold
+      </button>
+      <button onClick={() => applyFormat(text => `_${text}_`)}>
+        Italic
+      </button>
+    </div>
+  );
+
+  return createPortal(toolbarContent, document.body);
+}
+```
+
+<Note>
+  `useFormattingToolbarState` is perfect for creating reusable toolbar components that can be placed anywhere in your component tree, even in React portals.
+</Note>
+
+## Comparison with useFormattingToolbar
+
+| Feature | useFormattingToolbar | useFormattingToolbarState |
+|---------|---------------------|---------------------------|
+| Subscribes to global state | Yes | Yes |
+| Provides `getInputProps()` | Yes | No |
+| Provides `getToolbarProps()` | Yes | No |
+| Provides `applyFormat()` | Yes | Yes |
+| Provides `isVisible` | Yes | Yes |
+| Provides `toolbarState` | Yes | Yes |
+| Manages focus/blur events | Yes | No |
+| Configuration options | Yes (via config param) | No |
+| Use case | Input components | Toolbar-only components |
+
+<Note>
+  Use `useFormattingToolbar` when your component handles inputs. Use `useFormattingToolbarState` when you only need to render a toolbar that responds to the global state.
+</Note>
+
+## Why Use This Hook?
+
+1. **Separation of Concerns**: Keep input handling logic separate from toolbar rendering
+2. **Performance**: Lighter weight than `useFormattingToolbar` when you don't need input handlers
+3. **Flexibility**: Create toolbar components that can be placed anywhere in your app
+4. **Reusability**: Build once, use with any inputs managed by `useFormattingToolbar`
+
+<Warning>
+  This hook only subscribes to the global toolbar state. You still need at least one instance of `useFormattingToolbar` in your application to manage input focus and show the toolbar.
+</Warning>
+
+## Related
+
+- [useFormattingToolbar](/api/hooks/use-formatting-toolbar) - Main hook with full functionality
+- [FormattingToolbar](/api/components/formatting-toolbar) - Pre-built toolbar component
+- [Global State Pattern](/concepts/global-state) - Understanding the singleton pattern

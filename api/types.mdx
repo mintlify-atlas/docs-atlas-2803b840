@@ -1,0 +1,235 @@
+---
+title: 'Type Definitions'
+description: 'Complete TypeScript type definitions for the Blumbaben library'
+---
+
+This page documents all TypeScript types exported by the Blumbaben library. These types enable full type safety when working with formatting toolbars and text inputs.
+
+## Core Types
+
+### FormatterFunction
+
+Function type for text formatting operations. Takes a string input and returns a transformed string.
+
+```typescript
+export type FormatterFunction = (text: string) => string;
+```
+
+<Expandable title="Examples">
+
+```typescript
+const boldFormatter: FormatterFunction = (text) => `**${text}**`;
+const upperCaseFormatter: FormatterFunction = (text) => text.toUpperCase();
+const italicFormatter: FormatterFunction = (text) => `_${text}_`;
+const wrapInQuotes: FormatterFunction = (text) => `"${text}"`;
+```
+
+</Expandable>
+
+---
+
+### TextInputElement
+
+Union type representing supported HTML input elements for text formatting. Includes both single-line inputs and multi-line textareas.
+
+```typescript
+export type TextInputElement = HTMLInputElement | HTMLTextAreaElement;
+```
+
+This type is used throughout the library to accept either input or textarea elements interchangeably.
+
+---
+
+## Configuration Types
+
+### ToolbarConfig
+
+Configuration options for the formatting toolbar behavior and appearance.
+
+```typescript
+export type ToolbarConfig = {
+    getPosition?: (element: TextInputElement) => ToolbarPosition;
+    hideDelay?: number;
+    preventCloseOnClick?: boolean;
+};
+```
+
+<ResponseField name="getPosition" type="(element: TextInputElement) => ToolbarPosition">
+  Custom positioning function to determine where the toolbar appears relative to the focused element. If not provided, defaults to positioning below the element.
+
+  <Expandable title="Example">
+
+  ```typescript
+  const config: ToolbarConfig = {
+    getPosition: (element) => {
+      const rect = element.getBoundingClientRect();
+      return { x: rect.left, y: rect.top - 50 }; // Above the element
+    }
+  };
+  ```
+
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="hideDelay" type="number" default="500">
+  Delay in milliseconds before hiding the toolbar after the input loses focus. This allows users to click on toolbar buttons without the toolbar disappearing.
+</ResponseField>
+
+<ResponseField name="preventCloseOnClick" type="boolean" default="true">
+  Whether to prevent the toolbar from closing when clicked. When true, clicking toolbar buttons won't cause the input to lose focus.
+</ResponseField>
+
+---
+
+### ToolbarPosition
+
+Represents the x,y coordinates for positioning the toolbar on screen.
+
+```typescript
+export type ToolbarPosition = {
+    x: number;
+    y: number;
+};
+```
+
+<ResponseField name="x" type="number" required>
+  Horizontal position in pixels from the left edge of the viewport
+</ResponseField>
+
+<ResponseField name="y" type="number" required>
+  Vertical position in pixels from the top edge of the viewport
+</ResponseField>
+
+---
+
+## State Types
+
+### ToolbarState
+
+Current state of the formatting toolbar including visibility, position, and active element.
+
+```typescript
+export type ToolbarState = {
+    activeElement: null | TextInputElement;
+    isVisible: boolean;
+    position: null | ToolbarPosition;
+};
+```
+
+<ResponseField name="activeElement" type="null | TextInputElement" required>
+  The currently focused input/textarea element, or null if no element is active
+</ResponseField>
+
+<ResponseField name="isVisible" type="boolean" required>
+  Whether the toolbar is currently visible to the user
+</ResponseField>
+
+<ResponseField name="position" type="null | ToolbarPosition" required>
+  Current position of the toolbar, or null if not positioned
+</ResponseField>
+
+<Expandable title="Usage Example">
+
+```typescript
+import { useFormattingToolbarState } from 'blumbaben';
+import type { ToolbarState } from 'blumbaben';
+
+const MyToolbar = () => {
+  const state: ToolbarState = useFormattingToolbarState();
+
+  if (!state.isVisible) return null;
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        left: state.position?.x,
+        top: state.position?.y,
+      }}
+    >
+      {/* Toolbar content */}
+    </div>
+  );
+};
+```
+
+</Expandable>
+
+---
+
+## Import
+
+All types can be imported from the main package:
+
+```typescript
+import type {
+  FormatterFunction,
+  TextInputElement,
+  ToolbarConfig,
+  ToolbarPosition,
+  ToolbarState,
+} from 'blumbaben';
+```
+
+## Type Safety Tips
+
+<Expandable title="Working with FormatterFunction">
+
+When creating custom formatters, ensure they always return a string:
+
+```typescript
+// ✅ Good
+const trimFormatter: FormatterFunction = (text) => text.trim();
+
+// ✅ Good
+const addPrefixFormatter: FormatterFunction = (text) => {
+  return text ? `PREFIX: ${text}` : '';
+};
+
+// ❌ Bad - returns undefined
+const badFormatter: FormatterFunction = (text) => {
+  console.log(text);
+};
+```
+
+</Expandable>
+
+<Expandable title="Type-safe Config Objects">
+
+Use the `ToolbarConfig` type for type-safe configuration:
+
+```typescript
+const config: ToolbarConfig = {
+  hideDelay: 300,
+  preventCloseOnClick: true,
+  getPosition: (element) => {
+    const rect = element.getBoundingClientRect();
+    return {
+      x: rect.left + rect.width / 2,
+      y: rect.top - 60,
+    };
+  },
+};
+
+const { inputProps } = useFormattingToolbar(config);
+```
+
+</Expandable>
+
+<Expandable title="Narrowing TextInputElement">
+
+If you need to distinguish between input and textarea:
+
+```typescript
+const handleElement = (element: TextInputElement) => {
+  if (element.tagName === 'TEXTAREA') {
+    // TypeScript knows this is HTMLTextAreaElement
+    console.log('Textarea with rows:', element.rows);
+  } else {
+    // TypeScript knows this is HTMLInputElement
+    console.log('Input with type:', element.type);
+  }
+};
+```
+
+</Expandable>

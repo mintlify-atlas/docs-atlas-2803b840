@@ -1,0 +1,459 @@
+---
+title: Custom Positioning
+description: Learn how to customize the toolbar position relative to your input elements
+---
+
+By default, Blumbaben positions the toolbar just below the focused input element. This guide shows you how to customize the positioning behavior to fit your design needs.
+
+## Default Positioning
+
+The default positioning function places the toolbar 5 pixels below the input:
+
+```tsx
+// Default behavior (from src/hooks/useFormattingToolbar.ts:13-19)
+const defaultGetPosition = (element: TextInputElement) => {
+    const rect = element.getBoundingClientRect();
+    return {
+        x: rect.left,
+        y: rect.bottom + 5,
+    };
+};
+```
+
+This creates a toolbar that appears directly beneath the focused element:
+
+```
+┌─────────────────────────────┐
+│  <input> element            │
+└─────────────────────────────┘
+     ↓ (5px gap)
+┌─────────────────────────────┐
+│  Toolbar appears here       │
+└─────────────────────────────┘
+```
+
+## Custom Position Function
+
+You can provide a custom `getPosition` function in the toolbar configuration:
+
+### Position Above Input
+
+```tsx
+import { useFormattingToolbar } from 'blumbaben';
+
+function MyComponent() {
+    const { getInputProps, isVisible, applyFormat } = useFormattingToolbar({
+        getPosition: (element) => {
+            const rect = element.getBoundingClientRect();
+            return {
+                x: rect.left,
+                y: rect.top - 50, // Position 50px above the element
+            };
+        },
+    });
+
+    return (
+        <div>
+            <textarea {...getInputProps()} />
+            {isVisible && (
+                <div className="toolbar">
+                    <button onClick={() => applyFormat((text) => text.toUpperCase())}>
+                        UPPERCASE
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+}
+```
+
+### Centered Toolbar
+
+```tsx
+const { getInputProps } = useFormattingToolbar({
+    getPosition: (element) => {
+        const rect = element.getBoundingClientRect();
+        const toolbarWidth = 300; // Estimate your toolbar width
+        
+        return {
+            x: rect.left + (rect.width / 2) - (toolbarWidth / 2),
+            y: rect.bottom + 10,
+        };
+    },
+});
+```
+
+### Right-Aligned Toolbar
+
+```tsx
+const { getInputProps } = useFormattingToolbar({
+    getPosition: (element) => {
+        const rect = element.getBoundingClientRect();
+        const toolbarWidth = 250;
+        
+        return {
+            x: rect.right - toolbarWidth,
+            y: rect.bottom + 5,
+        };
+    },
+});
+```
+
+## Position Configuration Options
+
+<Tabs>
+  <Tab title="Below (Default)">
+    ```tsx
+    getPosition: (element) => {
+        const rect = element.getBoundingClientRect();
+        return {
+            x: rect.left,
+            y: rect.bottom + 5,
+        };
+    }
+    ```
+  </Tab>
+  
+  <Tab title="Above">
+    ```tsx
+    getPosition: (element) => {
+        const rect = element.getBoundingClientRect();
+        return {
+            x: rect.left,
+            y: rect.top - 50, // Adjust height based on toolbar size
+        };
+    }
+    ```
+  </Tab>
+  
+  <Tab title="Right Side">
+    ```tsx
+    getPosition: (element) => {
+        const rect = element.getBoundingClientRect();
+        return {
+            x: rect.right + 10,
+            y: rect.top,
+        };
+    }
+    ```
+  </Tab>
+  
+  <Tab title="Left Side">
+    ```tsx
+    getPosition: (element) => {
+        const rect = element.getBoundingClientRect();
+        const toolbarWidth = 200;
+        return {
+            x: rect.left - toolbarWidth - 10,
+            y: rect.top,
+        };
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Using with FormattingToolbar Component
+
+When using the `FormattingToolbar` component, pass the configuration via the `config` prop:
+
+```tsx
+import React, { useState } from 'react';
+import { useFormattingToolbar, FormattingToolbar } from 'blumbaben';
+
+function MyComponent() {
+    const [content, setContent] = useState('');
+    const { getInputProps } = useFormattingToolbar();
+
+    return (
+        <div>
+            <textarea
+                {...getInputProps()}
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+            />
+
+            <FormattingToolbar
+                config={{
+                    getPosition: (element) => {
+                        const rect = element.getBoundingClientRect();
+                        return {
+                            x: rect.left,
+                            y: rect.top - 60, // Above the input
+                        };
+                    },
+                }}
+            >
+                {(applyFormat) => (
+                    <div className="toolbar">
+                        <button onClick={() => applyFormat((text) => text.toUpperCase())}>
+                            UPPERCASE
+                        </button>
+                    </div>
+                )}
+            </FormattingToolbar>
+        </div>
+    );
+}
+```
+
+## Advanced Positioning Strategies
+
+### Viewport-Aware Positioning
+
+Prevent the toolbar from going off-screen:
+
+```tsx
+function getSmartPosition(element: HTMLInputElement | HTMLTextAreaElement) {
+    const rect = element.getBoundingClientRect();
+    const toolbarHeight = 50;
+    const toolbarWidth = 300;
+    const padding = 10;
+
+    let x = rect.left;
+    let y = rect.bottom + 5;
+
+    // Check if toolbar would overflow right edge
+    if (x + toolbarWidth > window.innerWidth) {
+        x = window.innerWidth - toolbarWidth - padding;
+    }
+
+    // Check if toolbar would overflow bottom edge
+    if (y + toolbarHeight > window.innerHeight) {
+        // Position above instead
+        y = rect.top - toolbarHeight - 5;
+    }
+
+    // Ensure minimum left position
+    x = Math.max(padding, x);
+
+    return { x, y };
+}
+
+const { getInputProps } = useFormattingToolbar({
+    getPosition: getSmartPosition,
+});
+```
+
+### Scroll-Aware Positioning
+
+Account for scrolling containers:
+
+```tsx
+function getScrollAwarePosition(element: HTMLInputElement | HTMLTextAreaElement) {
+    const rect = element.getBoundingClientRect();
+    
+    // Get scroll position
+    const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+    const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+
+    return {
+        x: rect.left + scrollX,
+        y: rect.bottom + scrollY + 5,
+    };
+}
+
+const { getInputProps } = useFormattingToolbar({
+    getPosition: getScrollAwarePosition,
+});
+```
+
+<Note>
+The toolbar uses `position: fixed` by default, so coordinates are relative to the viewport. If you need absolute positioning, you may need to adjust your calculations.
+</Note>
+
+### Dynamic Positioning Based on Input Type
+
+```tsx
+function getDynamicPosition(element: HTMLInputElement | HTMLTextAreaElement) {
+    const rect = element.getBoundingClientRect();
+    const isTextarea = element.tagName === 'TEXTAREA';
+
+    if (isTextarea) {
+        // For textareas, position at top-right corner
+        return {
+            x: rect.right - 250,
+            y: rect.top,
+        };
+    } else {
+        // For inputs, position below
+        return {
+            x: rect.left,
+            y: rect.bottom + 5,
+        };
+    }
+}
+
+const { getInputProps } = useFormattingToolbar({
+    getPosition: getDynamicPosition,
+});
+```
+
+## Complete Configuration Example
+
+Here's a full example combining custom positioning with other configuration options:
+
+```tsx
+import React, { useState } from 'react';
+import { useFormattingToolbar, FormattingToolbar, type ToolbarConfig } from 'blumbaben';
+
+function AdvancedToolbarExample() {
+    const [content, setContent] = useState('');
+
+    const toolbarConfig: ToolbarConfig = {
+        // Custom positioning function
+        getPosition: (element) => {
+            const rect = element.getBoundingClientRect();
+            const toolbarWidth = 300;
+            const padding = 10;
+
+            let x = rect.left + (rect.width / 2) - (toolbarWidth / 2);
+            let y = rect.bottom + 10;
+
+            // Keep within viewport bounds
+            x = Math.max(padding, Math.min(x, window.innerWidth - toolbarWidth - padding));
+
+            return { x, y };
+        },
+        
+        // Delay before hiding (milliseconds)
+        hideDelay: 300,
+        
+        // Prevent toolbar from closing when clicked
+        preventCloseOnClick: true,
+    };
+
+    const { getInputProps } = useFormattingToolbar(toolbarConfig);
+
+    return (
+        <div className="max-w-2xl mx-auto p-6">
+            <textarea
+                {...getInputProps()}
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                className="w-full p-4 border rounded"
+                rows={6}
+                placeholder="Focus to see the centered toolbar below"
+            />
+
+            <FormattingToolbar config={toolbarConfig}>
+                {(applyFormat) => (
+                    <div className="flex gap-2 p-3 bg-white border rounded-lg shadow-lg">
+                        <button
+                            onClick={() => applyFormat((text) => text.toUpperCase())}
+                            className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                        >
+                            ABC
+                        </button>
+                        <button
+                            onClick={() => applyFormat((text) => text.toLowerCase())}
+                            className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+                        >
+                            abc
+                        </button>
+                        <button
+                            onClick={() => applyFormat((text) => `**${text}**`)}
+                            className="px-3 py-1 bg-purple-500 text-white rounded hover:bg-purple-600"
+                        >
+                            Bold
+                        </button>
+                    </div>
+                )}
+            </FormattingToolbar>
+        </div>
+    );
+}
+```
+
+## Configuration Reference
+
+The `ToolbarConfig` interface (from `src/hooks/useFormattingToolbar.ts:165`) supports:
+
+```typescript
+interface ToolbarConfig {
+    // Custom positioning function
+    getPosition?: (element: TextInputElement) => ToolbarPosition;
+
+    // Delay before hiding toolbar after blur (ms)
+    hideDelay?: number; // default: 500
+
+    // Prevent toolbar from closing when clicked
+    preventCloseOnClick?: boolean; // default: true
+}
+
+type TextInputElement = HTMLInputElement | HTMLTextAreaElement;
+
+type ToolbarPosition = {
+    x: number;
+    y: number;
+};
+```
+
+## Using getToolbarProps()
+
+For advanced use cases, you can access the positioning styles directly:
+
+```tsx
+const { getInputProps, getToolbarProps, isVisible, applyFormat } = useFormattingToolbar({
+    getPosition: (element) => {
+        const rect = element.getBoundingClientRect();
+        return { x: rect.left, y: rect.top - 50 };
+    },
+});
+
+return (
+    <div>
+        <textarea {...getInputProps()} />
+        
+        {isVisible && (
+            <div {...getToolbarProps()}>
+                {/* Toolbar content */}
+            </div>
+        )}
+    </div>
+);
+```
+
+The `getToolbarProps()` function returns (from `src/hooks/useFormattingToolbar.ts:149-165`):
+
+```typescript
+{
+    style: {
+        position: 'fixed',
+        top: toolbarState.position?.y ?? 0,
+        left: toolbarState.position?.x ?? 0,
+        zIndex: 1000,
+    },
+    onMouseDown?: (e: React.MouseEvent) => void // if preventCloseOnClick is true
+}
+```
+
+## Tips for Custom Positioning
+
+<Steps>
+  <Step title="Measure Your Toolbar">
+    Know your toolbar's dimensions to calculate positions accurately. Use a ref or fixed dimensions.
+  </Step>
+  
+  <Step title="Account for Viewport Bounds">
+    Always check if the toolbar would overflow the viewport and adjust accordingly.
+  </Step>
+  
+  <Step title="Consider Scroll Position">
+    For `position: absolute`, account for scroll offsets. For `position: fixed` (default), use viewport coordinates.
+  </Step>
+  
+  <Step title="Test on Different Screen Sizes">
+    Ensure your positioning logic works on mobile, tablet, and desktop viewports.
+  </Step>
+</Steps>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Styling" icon="paintbrush" href="/guides/styling">
+    Learn how to style your toolbar with CSS
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/types">
+    Explore all configuration options and types
+  </Card>
+</CardGroup>

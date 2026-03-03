@@ -1,0 +1,107 @@
+---
+title: Installation
+description: Install Blumbaben with your preferred package manager
+---
+
+# Installation
+
+Blumbaben is available as an npm package and can be installed with any modern JavaScript package manager.
+
+## Package managers
+
+Choose your preferred package manager to install Blumbaben:
+
+<CodeGroup>
+
+```bash npm
+npm install blumbaben
+```
+
+```bash yarn
+yarn add blumbaben
+```
+
+```bash pnpm
+pnpm add blumbaben
+```
+
+```bash bun
+bun add blumbaben
+```
+
+</CodeGroup>
+
+## Requirements
+
+Blumbaben has minimal requirements:
+
+### Peer dependencies
+
+Blumbaben requires React 19 or higher as a peer dependency:
+
+```json package.json
+{
+  "dependencies": {
+    "blumbaben": "^1.0.2",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
+  }
+}
+```
+
+<Note>
+  If you're using React 18, Blumbaben should still work, but React 19 is the officially supported version.
+</Note>
+
+### TypeScript support
+
+Blumbaben is written in TypeScript and includes type definitions out of the box. No additional `@types` packages are needed.
+
+```typescript
+// TypeScript types are automatically available
+import { useFormattingToolbar, FormatterFunction } from 'blumbaben';
+
+const formatter: FormatterFunction = (text) => text.toUpperCase();
+```
+
+### Zero dependencies
+
+Blumbaben has **zero runtime dependencies** other than React. This keeps your bundle size small and reduces potential conflicts.
+
+<Info>
+  The library is ESM-only. Make sure your build system supports ES modules.
+</Info>
+
+## Verify installation
+
+After installation, verify Blumbaben is correctly installed by importing it in your project:
+
+```typescript
+import { useFormattingToolbar, FormattingToolbar } from 'blumbaben';
+
+console.log('Blumbaben installed successfully!');
+```
+
+If the import succeeds without errors, you're ready to use Blumbaben in your application.
+
+## Bundle size
+
+Blumbaben is designed to be lightweight:
+
+- **Minified**: ~3-4 KB
+- **Gzipped**: ~1-2 KB
+- **Zero dependencies**: No additional packages required
+
+You can check the current bundle size at [bundlejs.com](https://bundlejs.com/?q=blumbaben%40latest).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Quick start" icon="rocket" href="/quickstart">
+    Learn how to use Blumbaben with a working example
+  </Card>
+  
+  <Card title="View demo" icon="display" href="https://blumbaben.vercel.app">
+    Explore the live Storybook showcase
+  </Card>
+</CardGroup>

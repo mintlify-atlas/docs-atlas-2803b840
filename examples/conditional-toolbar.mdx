@@ -1,0 +1,737 @@
+---
+title: 'Conditional Toolbar Content'
+description: 'Complete example showing how to display different toolbar buttons based on input type, content, or application state'
+---
+
+# Conditional Toolbar Content
+
+This example demonstrates how to show different toolbar content based on the type of input field, current selection, or application state. Perfect for creating context-aware formatting toolbars.
+
+## Complete Working Example
+
+<CodeGroup>
+
+```tsx Component
+import React, { useState } from 'react';
+import { useFormattingToolbar, FormattingToolbar } from 'blumbaben';
+import { useFormattingToolbarState } from 'blumbaben';
+
+function ConditionalToolbarDemo() {
+  const [singleLine, setSingleLine] = useState('');
+  const [multiLine, setMultiLine] = useState('');
+  const [codeInput, setCodeInput] = useState('');
+  const { getInputProps } = useFormattingToolbar();
+
+  return (
+    <div className="demo-container">
+      <h2>Context-Aware Formatting Toolbar</h2>
+      <p className="description">
+        Each input shows different formatting options based on its type and purpose
+      </p>
+
+      <div className="inputs-grid">
+        {/* Single-line input */}
+        <div className="input-wrapper">
+          <label htmlFor="single-line">Single-line Input</label>
+          <input
+            {...getInputProps()}
+            id="single-line"
+            type="text"
+            data-input-type="single-line"
+            value={singleLine}
+            onChange={(e) => setSingleLine(e.target.value)}
+            placeholder="Try formatting text here..."
+            className="text-input"
+          />
+          <span className="hint">Shows case transformations and text cleaning</span>
+        </div>
+
+        {/* Multi-line textarea */}
+        <div className="input-wrapper">
+          <label htmlFor="multi-line">Multi-line Textarea</label>
+          <textarea
+            {...getInputProps()}
+            id="multi-line"
+            data-input-type="textarea"
+            value={multiLine}
+            onChange={(e) => setMultiLine(e.target.value)}
+            placeholder="Type multiple lines here..."
+            className="text-input"
+            rows={5}
+          />
+          <span className="hint">Shows markdown formatting and list options</span>
+        </div>
+
+        {/* Code input */}
+        <div className="input-wrapper">
+          <label htmlFor="code-input">Code Editor</label>
+          <textarea
+            {...getInputProps()}
+            id="code-input"
+            data-input-type="code"
+            value={codeInput}
+            onChange={(e) => setCodeInput(e.target.value)}
+            placeholder="Write code here..."
+            className="text-input code-font"
+            rows={5}
+          />
+          <span className="hint">Shows code-specific formatting options</span>
+        </div>
+      </div>
+
+      <FormattingToolbar
+        style={{
+          backgroundColor: 'white',
+          border: '1px solid #e2e8f0',
+          borderRadius: '10px',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+          padding: '10px',
+          minWidth: '300px',
+        }}
+      >
+        {(applyFormat) => <ContextAwareButtons applyFormat={applyFormat} />}
+      </FormattingToolbar>
+    </div>
+  );
+}
+
+// Separate component for conditional toolbar content
+function ContextAwareButtons({ applyFormat }: { applyFormat: (fn: (text: string) => string) => void }) {
+  const { toolbarState } = useFormattingToolbarState();
+  const activeElement = toolbarState.activeElement;
+
+  if (!activeElement) return null;
+
+  // Determine input type from data attribute or tag name
+  const inputType = activeElement.getAttribute('data-input-type') || 
+                   (activeElement.tagName === 'TEXTAREA' ? 'textarea' : 'single-line');
+
+  // Check if there's selected text
+  const hasSelection = activeElement.selectionStart !== activeElement.selectionEnd;
+
+  return (
+    <div className="conditional-toolbar">
+      {/* Header showing context */}
+      <div className="toolbar-header">
+        <span className="toolbar-badge">
+          {inputType === 'single-line' && '📝 Text Input'}
+          {inputType === 'textarea' && '📄 Textarea'}
+          {inputType === 'code' && '💻 Code'}
+        </span>
+        {hasSelection && <span className="selection-badge">Text Selected</span>}
+      </div>
+
+      <div className="toolbar-divider" />
+
+      {/* Single-line input buttons */}
+      {inputType === 'single-line' && (
+        <div className="button-group">
+          <button
+            onClick={() => applyFormat((text) => text.toUpperCase())}
+            className="toolbar-btn"
+            title="UPPERCASE"
+          >
+            ABC
+          </button>
+          <button
+            onClick={() => applyFormat((text) => text.toLowerCase())}
+            className="toolbar-btn"
+            title="lowercase"
+          >
+            abc
+          </button>
+          <button
+            onClick={() => applyFormat((text) =>
+              text.replace(/\w\S*/g, (word) =>
+                word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+              )
+            )}
+            className="toolbar-btn"
+            title="Title Case"
+          >
+            Abc
+          </button>
+          <button
+            onClick={() => applyFormat((text) => text.trim())}
+            className="toolbar-btn"
+            title="Trim whitespace"
+          >
+            ✂️ Trim
+          </button>
+        </div>
+      )}
+
+      {/* Textarea buttons */}
+      {inputType === 'textarea' && (
+        <div className="button-group-vertical">
+          <div className="button-group">
+            <button
+              onClick={() => applyFormat((text) => `**${text}**`)}
+              className="toolbar-btn"
+              title="Bold"
+            >
+              <strong>B</strong>
+            </button>
+            <button
+              onClick={() => applyFormat((text) => `*${text}*`)}
+              className="toolbar-btn"
+              title="Italic"
+            >
+              <em>I</em>
+            </button>
+            <button
+              onClick={() => applyFormat((text) => `> ${text}`)}
+              className="toolbar-btn"
+              title="Quote"
+            >
+              "
+            </button>
+          </div>
+
+          <div className="button-group">
+            <button
+              onClick={() => applyFormat((text) =>
+                text.split('\n').map(line => line.trim() ? `- ${line}` : '').join('\n')
+              )}
+              className="toolbar-btn"
+              title="Convert to bullet list"
+            >
+              • List
+            </button>
+            <button
+              onClick={() => applyFormat((text) => text.replace(/\n/g, ' '))}
+              className="toolbar-btn"
+              title="Remove line breaks"
+            >
+              🔗 Join
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Code editor buttons */}
+      {inputType === 'code' && (
+        <div className="button-group-vertical">
+          <div className="button-group">
+            <button
+              onClick={() => applyFormat((text) =>
+                text.split('\n').map(line => `  ${line}`).join('\n')
+              )}
+              className="toolbar-btn code-btn"
+              title="Indent code"
+            >
+              → Indent
+            </button>
+            <button
+              onClick={() => applyFormat((text) =>
+                text.split('\n').map(line => line.replace(/^\s{2}/, '')).join('\n')
+              )}
+              className="toolbar-btn code-btn"
+              title="Outdent code"
+            >
+              ← Outdent
+            </button>
+          </div>
+
+          <div className="button-group">
+            <button
+              onClick={() => applyFormat((text) =>
+                text.split('\n').map(line => `// ${line}`).join('\n')
+              )}
+              className="toolbar-btn code-btn"
+              title="Comment out"
+            >
+              // Comment
+            </button>
+            <button
+              onClick={() => applyFormat((text) => `\`\`\`\n${text}\n\`\`\``)}
+              className="toolbar-btn code-btn"
+              title="Wrap in code block"
+            >
+              {'{ } Block'}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default ConditionalToolbarDemo;
+```
+
+```css Styling
+.demo-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.demo-container h2 {
+  margin: 0 0 8px 0;
+  color: #1e293b;
+  font-size: 24px;
+}
+
+.description {
+  margin: 0 0 24px 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.inputs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.input-wrapper label {
+  font-weight: 600;
+  color: #334155;
+  font-size: 14px;
+}
+
+.text-input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.text-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.code-font {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+.hint {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.conditional-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toolbar-header {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.toolbar-badge {
+  background: #f1f5f9;
+  color: #334155;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.selection-badge {
+  background: #dbeafe;
+  color: #1e40af;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.toolbar-divider {
+  height: 1px;
+  background: #e2e8f0;
+}
+
+.button-group {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.button-group-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toolbar-btn {
+  padding: 8px 12px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+  color: #334155;
+  font-weight: 500;
+}
+
+.toolbar-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e0;
+}
+
+.code-btn {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 11px;
+}
+```
+
+</CodeGroup>
+
+## How It Works
+
+1. **Input Type Detection**: Uses `data-input-type` attributes or tag names to identify input types
+2. **State-Based Rendering**: The `useFormattingToolbarState()` hook provides access to the active element
+3. **Dynamic Buttons**: Different button sets render based on the active input's context
+4. **Selection Detection**: Detects if text is selected and shows relevant options
+
+## Conditional Logic Patterns
+
+Here are common patterns for conditional toolbar content:
+
+### Based on Input Type
+
+```tsx Input Type Conditions
+function InputTypeAwareToolbar({ applyFormat }: { applyFormat: (fn: any) => void }) {
+  const { toolbarState } = useFormattingToolbarState();
+  const element = toolbarState.activeElement;
+
+  if (!element) return null;
+
+  const isTextarea = element.tagName === 'TEXTAREA';
+  const isInput = element.tagName === 'INPUT';
+  const inputType = element.getAttribute('type');
+
+  return (
+    <div>
+      {/* Always show */}
+      <button onClick={() => applyFormat((text) => text.toUpperCase())}>
+        UPPERCASE
+      </button>
+
+      {/* Only for textareas */}
+      {isTextarea && (
+        <button onClick={() => applyFormat((text) => text.replace(/\n/g, ' '))}>
+          Remove Line Breaks
+        </button>
+      )}
+
+      {/* Only for email inputs */}
+      {isInput && inputType === 'email' && (
+        <button onClick={() => applyFormat((text) => text.toLowerCase().trim())}>
+          Format Email
+        </button>
+      )}
+    </div>
+  );
+}
+```
+
+### Based on Content
+
+```tsx Content-Aware Toolbar
+function ContentAwareToolbar({ applyFormat }: { applyFormat: (fn: any) => void }) {
+  const { toolbarState } = useFormattingToolbarState();
+  const element = toolbarState.activeElement;
+
+  if (!element) return null;
+
+  const content = element.value;
+  const hasLineBreaks = content.includes('\n');
+  const hasUrls = /https?:\/\//.test(content);
+  const hasNumbers = /\d/.test(content);
+
+  return (
+    <div>
+      {/* Show only if there are line breaks */}
+      {hasLineBreaks && (
+        <button onClick={() => applyFormat((text) => text.replace(/\n/g, ' '))}>
+          Join Lines
+        </button>
+      )}
+
+      {/* Show only if there are URLs */}
+      {hasUrls && (
+        <button onClick={() => applyFormat((text) =>
+          text.replace(/(https?:\/\/[^\s]+)/g, '[$1]($1)')
+        )}>
+          Convert URLs to Markdown
+        </button>
+      )}
+
+      {/* Show only if there are numbers */}
+      {hasNumbers && (
+        <button onClick={() => applyFormat((text) => text.replace(/\d/g, ''))}>
+          Remove Numbers
+        </button>
+      )}
+    </div>
+  );
+}
+```
+
+### Based on Selection
+
+```tsx Selection-Aware Toolbar
+function SelectionAwareToolbar({ applyFormat }: { applyFormat: (fn: any) => void }) {
+  const { toolbarState } = useFormattingToolbarState();
+  const element = toolbarState.activeElement;
+
+  if (!element) return null;
+
+  const hasSelection = element.selectionStart !== element.selectionEnd;
+  const selectionLength = element.selectionEnd - element.selectionStart;
+  const selectedText = hasSelection
+    ? element.value.substring(element.selectionStart, element.selectionEnd)
+    : '';
+
+  return (
+    <div>
+      {hasSelection ? (
+        // Show when text is selected
+        <>
+          <span>Selected: {selectionLength} chars</span>
+          <button onClick={() => applyFormat((text) => `**${text}**`)}>
+            Bold Selection
+          </button>
+          <button onClick={() => applyFormat((text) => text.toUpperCase())}>
+            Uppercase Selection
+          </button>
+        </>
+      ) : (
+        // Show when no selection
+        <>
+          <span>No selection</span>
+          <button onClick={() => applyFormat((text) => text.toUpperCase())}>
+            Uppercase All
+          </button>
+        </>
+      )}
+
+      {/* Show if selection is a URL */}
+      {hasSelection && /^https?:\/\//.test(selectedText) && (
+        <button onClick={() => applyFormat((text) => `[Link](${text})`)}>
+          Convert to Markdown Link
+        </button>
+      )}
+    </div>
+  );
+}
+```
+
+<Tip>
+**Performance Tip**: Use the `useFormattingToolbarState()` hook in your toolbar component instead of `useFormattingToolbar()` when you only need to read the state. This is more efficient for toolbar-only components.
+</Tip>
+
+### Based on Custom Data Attributes
+
+```tsx Custom Attribute Conditions
+// Define inputs with custom attributes
+<textarea
+  {...getInputProps()}
+  data-format-mode="markdown"
+  data-allow-html="false"
+/>
+
+// Conditional toolbar
+function CustomAttributeToolbar({ applyFormat }: { applyFormat: (fn: any) => void }) {
+  const { toolbarState } = useFormattingToolbarState();
+  const element = toolbarState.activeElement;
+
+  if (!element) return null;
+
+  const formatMode = element.getAttribute('data-format-mode');
+  const allowHtml = element.getAttribute('data-allow-html') === 'true';
+
+  return (
+    <div>
+      {formatMode === 'markdown' && (
+        <>
+          <button onClick={() => applyFormat((text) => `**${text}**`)}>Bold</button>
+          <button onClick={() => applyFormat((text) => `*${text}*`)}>Italic</button>
+        </>
+      )}
+
+      {formatMode === 'plain' && (
+        <>
+          <button onClick={() => applyFormat((text) => text.toUpperCase())}>
+            UPPERCASE
+          </button>
+          <button onClick={() => applyFormat((text) => text.toLowerCase())}>
+            lowercase
+          </button>
+        </>
+      )}
+
+      {allowHtml && (
+        <button onClick={() => applyFormat((text) => `<strong>${text}</strong>`)}>
+          HTML Bold
+        </button>
+      )}
+    </div>
+  );
+}
+```
+
+## Advanced: Multi-Input Form with Smart Toolbar
+
+A complete example showing a form with different input types:
+
+```tsx Complete Form Example
+import React, { useState } from 'react';
+import { useFormattingToolbar, FormattingToolbar } from 'blumbaben';
+import { useFormattingToolbarState } from 'blumbaben';
+
+function SmartForm() {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [bio, setBio] = useState('');
+  const [code, setCode] = useState('');
+  const { getInputProps } = useFormattingToolbar();
+
+  return (
+    <form>
+      <div>
+        <label>Full Name</label>
+        <input
+          {...getInputProps()}
+          data-field="name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Enter your name"
+        />
+      </div>
+
+      <div>
+        <label>Email</label>
+        <input
+          {...getInputProps()}
+          type="email"
+          data-field="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="your@email.com"
+        />
+      </div>
+
+      <div>
+        <label>Bio (Markdown)</label>
+        <textarea
+          {...getInputProps()}
+          data-field="bio"
+          data-format="markdown"
+          value={bio}
+          onChange={(e) => setBio(e.target.value)}
+          placeholder="Tell us about yourself..."
+          rows={4}
+        />
+      </div>
+
+      <div>
+        <label>Code Snippet</label>
+        <textarea
+          {...getInputProps()}
+          data-field="code"
+          data-format="code"
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          placeholder="Paste code here..."
+          rows={6}
+        />
+      </div>
+
+      <FormattingToolbar>
+        {(applyFormat) => <SmartFormToolbar applyFormat={applyFormat} />}
+      </FormattingToolbar>
+    </form>
+  );
+}
+
+function SmartFormToolbar({ applyFormat }: { applyFormat: (fn: any) => void }) {
+  const { toolbarState } = useFormattingToolbarState();
+  const element = toolbarState.activeElement;
+
+  if (!element) return null;
+
+  const field = element.getAttribute('data-field');
+  const format = element.getAttribute('data-format');
+
+  return (
+    <div style={{ padding: '8px', background: 'white', borderRadius: '8px', border: '1px solid #ddd' }}>
+      {field === 'name' && (
+        <div>
+          <button onClick={() => applyFormat((text) =>
+            text.replace(/\w\S*/g, (word) =>
+              word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+            )
+          )}>
+            Title Case
+          </button>
+          <button onClick={() => applyFormat((text) => text.trim())}>
+            Trim
+          </button>
+        </div>
+      )}
+
+      {field === 'email' && (
+        <div>
+          <button onClick={() => applyFormat((text) => text.toLowerCase().trim())}>
+            Format Email
+          </button>
+        </div>
+      )}
+
+      {format === 'markdown' && (
+        <div>
+          <button onClick={() => applyFormat((text) => `**${text}**`)}>Bold</button>
+          <button onClick={() => applyFormat((text) => `*${text}*`)}>Italic</button>
+          <button onClick={() => applyFormat((text) => `[${text}](url)`)}>Link</button>
+        </div>
+      )}
+
+      {format === 'code' && (
+        <div>
+          <button onClick={() => applyFormat((text) =>
+            text.split('\n').map(line => `  ${line}`).join('\n')
+          )}>
+            Indent
+          </button>
+          <button onClick={() => applyFormat((text) =>
+            text.split('\n').map(line => `// ${line}`).join('\n')
+          )}>
+            Comment
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+<Info>
+The toolbar automatically tracks which input is focused, so you can create highly contextual formatting options that adapt to your users' needs.
+</Info>
+
+## Related Documentation
+
+- [Markdown Toolbar](/examples/markdown-toolbar) - Markdown formatting examples
+- [Text Transforms](/examples/text-transforms) - Text transformation examples
+- [API Reference](/api/hooks/use-formatting-toolbar) - Full API documentation

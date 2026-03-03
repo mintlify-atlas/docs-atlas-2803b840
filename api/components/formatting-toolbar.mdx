@@ -1,0 +1,141 @@
+---
+title: FormattingToolbar
+description: API reference for the FormattingToolbar component
+---
+
+# FormattingToolbar
+
+Formatting toolbar component that renders when an input is focused. Automatically uses the global toolbar state - no need to pass a toolbar instance. Only renders when the global toolbar is visible and has a position.
+
+The toolbar automatically positions itself relative to the focused input element and provides an `applyFormat` function to child components for text transformation.
+
+## Import
+
+```typescript
+import { FormattingToolbar } from 'blumbaben';
+```
+
+## Props
+
+<ParamField path="children" type="(applyFormat: (formatter: FormatterFunction) => void) => React.ReactNode" required>
+  Render function that receives the `applyFormat` callback. Use this function to render your toolbar buttons and controls.
+
+  The `applyFormat` function accepts a `FormatterFunction` which is a function that takes a string and returns a transformed string.
+</ParamField>
+
+<ParamField path="as" type="keyof JSX.IntrinsicElements" default="'div'">
+  Container element type for the toolbar. Can be any valid HTML element tag name.
+</ParamField>
+
+<ParamField path="className" type="string">
+  Custom CSS class name for styling the toolbar container.
+</ParamField>
+
+<ParamField path="style" type="React.CSSProperties">
+  Custom inline styles for the toolbar container. These styles are merged with the positioning styles (`position`, `top`, `left`, `zIndex`).
+</ParamField>
+
+<ParamField path="config" type="ToolbarConfig">
+  Toolbar configuration options. Merged with default configuration.
+
+  See [ToolbarConfig](/api/types#toolbarconfig) for available options.
+</ParamField>
+
+## TypeScript Interfaces
+
+### FormattingToolbarProps
+
+```typescript
+type FormattingToolbarProps = {
+  /**
+   * Container element type for the toolbar.
+   * Can be any valid HTML element tag name.
+   *
+   * @default 'div'
+   */
+  as?: keyof JSX.IntrinsicElements;
+
+  /**
+   * Render function that receives the applyFormat callback.
+   * Use this function to render your toolbar buttons and controls.
+   *
+   * @param {(formatter: FormatterFunction) => void} applyFormat - Function to apply text formatting
+   * @returns {React.ReactNode} The toolbar content to render
+   */
+  children: (applyFormat: (formatter: FormatterFunction) => void) => React.ReactNode;
+
+  /**
+   * Custom CSS class name for styling the toolbar container.
+   */
+  className?: string;
+
+  /**
+   * Toolbar configuration options.
+   * Merged with default configuration.
+   */
+  config?: ToolbarConfig;
+
+  /**
+   * Custom inline styles for the toolbar container.
+   * These styles are merged with the positioning styles (position, top, left, zIndex).
+   */
+  style?: React.CSSProperties;
+};
+```
+
+## Return Value
+
+Returns `React.ReactElement | null` - The toolbar element or null if not visible.
+
+<Note>
+  The toolbar automatically returns `null` when not visible or when there is no position set, so you don't need to handle visibility yourself.
+</Note>
+
+## Behavior
+
+- **Automatic Positioning**: The toolbar positions itself as `position: fixed` with coordinates from the global toolbar state
+- **Global State**: Uses the global toolbar manager, so only one toolbar instance is shown at a time
+- **Click Prevention**: By default (`preventCloseOnClick: true`), clicking the toolbar prevents the blur event on the input, keeping the toolbar visible
+- **Z-Index**: Renders with `zIndex: 1000` to appear above other content
+
+## Complete Example
+
+```typescript
+import { FormattingToolbar } from 'blumbaben';
+import { Button } from './ui/button';
+
+function App() {
+  return (
+    <div>
+      <textarea {...getInputProps()} />
+
+      <FormattingToolbar className="my-toolbar" as="section">
+        {(applyFormat) => (
+          <>
+            <Button onClick={() => applyFormat(text => text.toUpperCase())}>
+              UPPERCASE
+            </Button>
+            <Button onClick={() => applyFormat(text => `**${text}**`)}>
+              Bold
+            </Button>
+            <Button onClick={() => applyFormat(text => text.replace(/\n/g, ' '))}>
+              Remove Line Breaks
+            </Button>
+          </>
+        )}
+      </FormattingToolbar>
+    </div>
+  );
+}
+```
+
+<Tip>
+  You can use the `as` prop to render the toolbar as any HTML element, such as `<nav>`, `<section>`, or `<aside>` for better semantic HTML.
+</Tip>
+
+## Related
+
+- [useFormattingToolbar](/api/hooks/use-formatting-toolbar) - Hook for manual toolbar integration
+- [withFormattingToolbar](/api/components/with-formatting-toolbar) - HOC for wrapping components
+- [ToolbarConfig](/api/types#toolbarconfig) - Configuration options
+- [FormatterFunction](/api/types#formatterfunction) - Type for formatting functions

@@ -1,0 +1,97 @@
+---
+title: 'DOM Utilities'
+description: 'DOM utility functions for text manipulation and element updates'
+---
+
+The `domUtils` module provides pure utility functions for working with HTML input and textarea elements, enabling text formatting operations and programmatic value updates while maintaining React state consistency.
+
+## Functions
+
+### applyFormattingOnSelection
+
+Applies a formatting function to either selected text or entire content of an element. If text is selected (selectionStart !== selectionEnd), formats only the selected portion. If no text is selected, formats the entire content of the element. Returns the formatted result without modifying the original element.
+
+<ParamField path="element" type="HTMLInputElement | HTMLTextAreaElement" required>
+  The HTML input or textarea element containing the text
+</ParamField>
+
+<ParamField path="formatter" type="(text: string) => string" required>
+  Function that takes a string and returns a formatted version
+</ParamField>
+
+<ResponseField name="return" type="string">
+  The formatted text with either selected portion or entire content transformed
+</ResponseField>
+
+#### Example
+
+```typescript
+const textarea = document.querySelector('textarea');
+const uppercaseFormatter = (text: string) => text.toUpperCase();
+const result = applyFormattingOnSelection(textarea, uppercaseFormatter);
+```
+
+#### Type Definition
+
+```typescript
+export const applyFormattingOnSelection = (
+    element: HTMLInputElement | HTMLTextAreaElement,
+    formatter: (text: string) => string,
+): string
+```
+
+---
+
+### updateElementValue
+
+Updates the value of an input or textarea element and optionally triggers onChange event. Creates a synthetic React change event if onChange callback is provided. Useful for programmatically updating form elements while maintaining React state consistency.
+
+<ParamField path="element" type="HTMLInputElement | HTMLTextAreaElement" required>
+  The HTML input or textarea element to update
+</ParamField>
+
+<ParamField path="newValue" type="string" required>
+  The new string value to set on the element
+</ParamField>
+
+<ParamField path="onChange" type="(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void">
+  Optional React onChange event handler to call after updating the value
+</ParamField>
+
+#### Example
+
+```typescript
+const handleChange = (e) => setFormValue(e.target.value);
+updateElementValue(textareaRef.current, 'New content', handleChange);
+```
+
+#### Type Definition
+
+```typescript
+export const updateElementValue = (
+    element: HTMLInputElement | HTMLTextAreaElement,
+    newValue: string,
+    onChange?: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void,
+) => void
+```
+
+#### How It Works
+
+1. **Sets the value**: Directly updates `element.value` with the new value
+2. **Dispatches input event**: Fires a native input event so React can detect the change
+3. **Calls onChange handler**: If provided, creates a synthetic React ChangeEvent and calls the onChange callback
+
+This ensures that both controlled and uncontrolled React components stay in sync when values are updated programmatically.
+
+## Import
+
+```typescript
+import { applyFormattingOnSelection, updateElementValue } from 'blumbaben';
+```
+
+## Usage Notes
+
+- Both functions are **pure utilities** that can be used independently of the React hooks
+- `applyFormattingOnSelection` does **not** modify the element - it only returns the formatted text
+- `updateElementValue` handles both **controlled** and **uncontrolled** React components
+- These functions are used internally by `useFormattingToolbar` but can be used directly for custom implementations

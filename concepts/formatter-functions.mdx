@@ -1,0 +1,351 @@
+---
+title: 'Formatter Functions'
+description: 'Understanding the FormatterFunction type and how to write custom text transformers'
+---
+
+## Overview
+
+Formatter functions are the core abstraction in Blumbaben. They are simple, pure functions that transform text from one form to another.
+
+## The FormatterFunction Type
+
+A formatter function is defined as:
+
+```typescript
+type FormatterFunction = (text: string) => string;
+```
+
+That's it! A formatter takes a string and returns a transformed string.
+
+<Info>
+Formatter functions should be **pure** - they should not have side effects and should always return the same output for the same input.
+</Info>
+
+## Basic Examples
+
+Here are some simple formatter functions:
+
+```typescript
+// Convert text to uppercase
+const uppercase: FormatterFunction = (text) => text.toUpperCase();
+
+// Convert text to lowercase
+const lowercase: FormatterFunction = (text) => text.toLowerCase();
+
+// Wrap text in markdown bold syntax
+const bold: FormatterFunction = (text) => `**${text}**`;
+
+// Wrap text in markdown italic syntax
+const italic: FormatterFunction = (text) => `*${text}*`;
+
+// Add markdown code formatting
+const code: FormatterFunction = (text) => `\`${text}\``;
+```
+
+## How Formatters Are Applied
+
+When you call `applyFormat(formatter)`, the following happens:
+
+1. **Get the active element** - The global toolbar manager retrieves the currently focused input/textarea
+2. **Extract text** - If text is selected, only the selection is extracted; otherwise, the entire value is used
+3. **Transform** - Your formatter function is called with the text
+4. **Update** - The result replaces the original text in the element
+5. **Sync state** - React's `onChange` handler is triggered to update component state
+
+```
+┌─────────────────┐
+│  User selects   │
+│  "hello world"  │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────────────────┐
+│ applyFormat(text => {       │
+│   return text.toUpperCase() │
+│ })                          │
+└────────┬────────────────────┘
+         │
+         ▼
+┌─────────────────┐
+│ "HELLO WORLD"   │
+└─────────────────┘
+```
+
+## Selection Handling
+
+Formatters work on both selected text and entire content:
+
+<Tabs>
+  <Tab title="With Selection">
+    ```typescript
+    // Text in input: "The quick brown fox"
+    // User selects: "quick"
+    
+    applyFormat(text => text.toUpperCase());
+    
+    // Result: "The QUICK brown fox"
+    ```
+  </Tab>
+  
+  <Tab title="Without Selection">
+    ```typescript
+    // Text in input: "The quick brown fox"
+    // User has cursor positioned but no selection
+    
+    applyFormat(text => text.toUpperCase());
+    
+    // Result: "THE QUICK BROWN FOX"
+    ```
+  </Tab>
+</Tabs>
+
+## Advanced Formatters
+
+### Conditional Formatting
+
+You can create formatters that behave differently based on the input:
+
+```typescript
+const smartQuotes: FormatterFunction = (text) => {
+    // Only add quotes if they're not already present
+    if (text.startsWith('"') && text.endsWith('"')) {
+        return text;
+    }
+    return `"${text}"`;
+};
+```
+
+### Multi-step Transformations
+
+Chain operations for complex formatting:
+
+```typescript
+const titleCase: FormatterFunction = (text) => {
+    return text
+        .toLowerCase()
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+};
+
+// "hello world" → "Hello World"
+```
+
+### Template-based Formatting
+
+Wrap text in templates:
+
+```typescript
+const codeBlock: FormatterFunction = (text) => {
+    return `\`\`\`\n${text}\n\`\`\``;
+};
+
+const link: FormatterFunction = (text) => {
+    return `[${text}](https://example.com)`;
+};
+
+const quote: FormatterFunction = (text) => {
+    return text
+        .split('\n')
+        .map(line => `> ${line}`)
+        .join('\n');
+};
+```
+
+## Common Patterns
+
+### Wrap and Unwrap
+
+Create toggle formatters that can add or remove formatting:
+
+```typescript
+const toggleBold: FormatterFunction = (text) => {
+    // Check if already bold
+    if (text.startsWith('**') && text.endsWith('**')) {
+        // Remove bold
+        return text.slice(2, -2);
+    }
+    // Add bold
+    return `**${text}**`;
+};
+```
+
+### Preserve Whitespace
+
+Handle leading/trailing whitespace carefully:
+
+```typescript
+const uppercasePreserveSpace: FormatterFunction = (text) => {
+    const leadingSpace = text.match(/^\s*/)?.[0] || '';
+    const trailingSpace = text.match(/\s*$/)?.[0] || '';
+    const content = text.trim();
+    
+    return leadingSpace + content.toUpperCase() + trailingSpace;
+};
+```
+
+### Replace Patterns
+
+Use regular expressions for pattern-based transformations:
+
+```typescript
+const removeEmojis: FormatterFunction = (text) => {
+    return text.replace(/[\u{1F600}-\u{1F64F}]/gu, '');
+};
+
+const normalizeSpaces: FormatterFunction = (text) => {
+    return text.replace(/\s+/g, ' ').trim();
+};
+```
+
+## Using Formatters
+
+### With the Hook
+
+```typescript
+import { useFormattingToolbar } from 'blumbaben';
+
+function MyEditor() {
+    const { getInputProps, isVisible, applyFormat, getToolbarProps } = useFormattingToolbar();
+
+    const formatters = {
+        bold: (text: string) => `**${text}**`,
+        italic: (text: string) => `*${text}*`,
+        uppercase: (text: string) => text.toUpperCase(),
+    };
+
+    return (
+        <>
+            <textarea {...getInputProps()} />
+            
+            {isVisible && (
+                <div {...getToolbarProps()}>
+                    <button onClick={() => applyFormat(formatters.bold)}>Bold</button>
+                    <button onClick={() => applyFormat(formatters.italic)}>Italic</button>
+                    <button onClick={() => applyFormat(formatters.uppercase)}>UPPER</button>
+                </div>
+            )}
+        </>
+    );
+}
+```
+
+### With the Component
+
+```typescript
+import { FormattingToolbar } from 'blumbaben';
+
+function MyEditor() {
+    const { getInputProps, applyFormat } = useFormattingToolbar();
+
+    return (
+        <>
+            <textarea {...getInputProps()} />
+            
+            <FormattingToolbar>
+                <button onClick={() => applyFormat(text => text.toUpperCase())}>
+                    UPPER
+                </button>
+                <button onClick={() => applyFormat(text => text.toLowerCase())}>
+                    lower
+                </button>
+            </FormattingToolbar>
+        </>
+    );
+}
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Keep It Pure" icon="droplet">
+    Avoid side effects. Return a new string; don't modify external state.
+  </Card>
+  
+  <Card title="Handle Edge Cases" icon="shield">
+    Consider empty strings, whitespace-only strings, and special characters.
+  </Card>
+  
+  <Card title="Be Idempotent" icon="rotate">
+    Applying the same formatter twice should be safe (or create toggle behavior).
+  </Card>
+  
+  <Card title="Test Thoroughly" icon="vial">
+    Test with various inputs including empty strings, special characters, and unicode.
+  </Card>
+</CardGroup>
+
+<Warning>
+Formatter functions should complete quickly. Slow formatters will block the UI and create a poor user experience.
+</Warning>
+
+## Common Mistakes
+
+### ❌ Mutating the Input
+
+```typescript
+// BAD - trying to mutate a string (strings are immutable anyway)
+const bad: FormatterFunction = (text) => {
+    text.toUpperCase(); // Returns a new string but doesn't use it
+    return text; // Returns original text
+};
+```
+
+### ✅ Return the Transformation
+
+```typescript
+// GOOD - return the transformed string
+const good: FormatterFunction = (text) => {
+    return text.toUpperCase();
+};
+```
+
+### ❌ Side Effects
+
+```typescript
+// BAD - formatter has side effects
+const bad: FormatterFunction = (text) => {
+    console.log('Formatting:', text); // Side effect
+    localStorage.setItem('lastFormatted', text); // Side effect
+    return text.toUpperCase();
+};
+```
+
+### ✅ Pure Function
+
+```typescript
+// GOOD - pure function with no side effects
+const good: FormatterFunction = (text) => {
+    return text.toUpperCase();
+};
+```
+
+## Type Safety
+
+For TypeScript users, always annotate your formatters:
+
+```typescript
+import type { FormatterFunction } from 'blumbaben';
+
+const myFormatter: FormatterFunction = (text) => {
+    return text.toUpperCase();
+};
+
+// Or use inline typing
+const formatters: Record<string, FormatterFunction> = {
+    bold: (text) => `**${text}**`,
+    italic: (text) => `*${text}*`,
+};
+```
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Global State" icon="globe" href="/concepts/global-state">
+    Understand how formatters are applied through the global state manager
+  </Card>
+  
+  <Card title="useFormattingToolbar" icon="code" href="/api/hooks/use-formatting-toolbar">
+    Learn how to use formatters with the main hook
+  </Card>
+</CardGroup>

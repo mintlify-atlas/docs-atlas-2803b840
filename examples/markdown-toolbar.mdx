@@ -1,0 +1,404 @@
+---
+title: 'Markdown Formatting Toolbar'
+description: 'Complete example of a toolbar with markdown formatting buttons for bold, italic, code, links, and more'
+---
+
+# Markdown Formatting Toolbar
+
+This example demonstrates a complete toolbar with common markdown formatting buttons. Users can select text and apply markdown formatting like **bold**, *italic*, `code`, links, and more.
+
+## Complete Working Example
+
+<CodeGroup>
+
+```tsx Component
+import React, { useState } from 'react';
+import { useFormattingToolbar, FormattingToolbar } from 'blumbaben';
+
+function MarkdownEditor() {
+  const [content, setContent] = useState('');
+  const { getInputProps } = useFormattingToolbar();
+
+  return (
+    <div className="editor-container">
+      <textarea
+        {...getInputProps()}
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+        placeholder="Start typing markdown content..."
+        className="markdown-textarea"
+        rows={12}
+      />
+
+      <FormattingToolbar
+        className="markdown-toolbar"
+        style={{
+          backgroundColor: 'white',
+          border: '1px solid #e2e8f0',
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+          padding: '8px',
+        }}
+      >
+        {(applyFormat) => (
+          <div className="toolbar-buttons">
+            {/* Text formatting */}
+            <button
+              onClick={() => applyFormat((text) => `**${text}**`)}
+              className="format-btn"
+              title="Bold"
+            >
+              <strong>B</strong>
+            </button>
+
+            <button
+              onClick={() => applyFormat((text) => `*${text}*`)}
+              className="format-btn"
+              title="Italic"
+            >
+              <em>I</em>
+            </button>
+
+            <button
+              onClick={() => applyFormat((text) => `~~${text}~~`)}
+              className="format-btn"
+              title="Strikethrough"
+            >
+              <s>S</s>
+            </button>
+
+            <div className="divider" />
+
+            {/* Code formatting */}
+            <button
+              onClick={() => applyFormat((text) => `\`${text}\``)}
+              className="format-btn"
+              title="Inline Code"
+            >
+              {'<>'}
+            </button>
+
+            <button
+              onClick={() => applyFormat((text) => `\`\`\`\n${text}\n\`\`\``)}
+              className="format-btn"
+              title="Code Block"
+            >
+              {'{ }'}
+            </button>
+
+            <div className="divider" />
+
+            {/* Links and quotes */}
+            <button
+              onClick={() => applyFormat((text) => `[${text}](url)`)}
+              className="format-btn"
+              title="Link"
+            >
+              🔗
+            </button>
+
+            <button
+              onClick={() => applyFormat((text) => `> ${text}`)}
+              className="format-btn"
+              title="Quote"
+            >
+              "
+            </button>
+
+            <div className="divider" />
+
+            {/* List formatting */}
+            <button
+              onClick={() => applyFormat((text) => `- ${text}`)}
+              className="format-btn"
+              title="Bullet List"
+            >
+              •
+            </button>
+
+            <button
+              onClick={() => applyFormat((text) => `1. ${text}`)}
+              className="format-btn"
+              title="Numbered List"
+            >
+              1.
+            </button>
+
+            <button
+              onClick={() => applyFormat((text) => `- [ ] ${text}`)}
+              className="format-btn"
+              title="Task List"
+            >
+              ☑
+            </button>
+          </div>
+        )}
+      </FormattingToolbar>
+    </div>
+  );
+}
+
+export default MarkdownEditor;
+```
+
+```css Styling
+.editor-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.markdown-textarea {
+  width: 100%;
+  padding: 16px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.markdown-textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.markdown-toolbar {
+  /* Positioned by FormattingToolbar component */
+}
+
+.toolbar-buttons {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.format-btn {
+  padding: 8px 12px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  color: #334155;
+}
+
+.format-btn:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e0;
+}
+
+.format-btn:active {
+  transform: scale(0.95);
+}
+
+.divider {
+  width: 1px;
+  height: 24px;
+  background: #e2e8f0;
+  margin: 0 4px;
+}
+```
+
+</CodeGroup>
+
+## How It Works
+
+1. **Textarea with Toolbar Integration**: The `getInputProps()` spread automatically adds focus/blur handlers to show/hide the toolbar
+2. **Markdown Formatters**: Each button applies a specific markdown syntax wrapper around the selected text
+3. **Formatter Functions**: Simple functions that wrap text with markdown syntax:
+   - `**text**` for bold
+   - `*text*` for italic
+   - `` `text` `` for inline code
+   - And more!
+
+## Formatter Function Examples
+
+Here are the individual formatter functions you can extract and reuse:
+
+```tsx Formatter Functions
+// Text styling
+const makeBold = (text: string) => `**${text}**`;
+const makeItalic = (text: string) => `*${text}*`;
+const makeStrikethrough = (text: string) => `~~${text}~~`;
+
+// Code formatting
+const makeInlineCode = (text: string) => `\`${text}\``;
+const makeCodeBlock = (text: string) => `\`\`\`\n${text}\n\`\`\``;
+
+// Links and quotes
+const makeLink = (text: string) => `[${text}](url)`;
+const makeQuote = (text: string) => `> ${text}`;
+
+// Lists
+const makeBulletList = (text: string) => `- ${text}`;
+const makeNumberedList = (text: string) => `1. ${text}`;
+const makeTaskList = (text: string) => `- [ ] ${text}`;
+
+// Headings
+const makeH1 = (text: string) => `# ${text}`;
+const makeH2 = (text: string) => `## ${text}`;
+const makeH3 = (text: string) => `### ${text}`;
+```
+
+<Tip>
+**Pro Tip**: If no text is selected, the formatter applies to the entire content of the textarea. This is perfect for quick transformations like converting everything to a code block!
+</Tip>
+
+## Advanced: Multi-line List Formatting
+
+You can create more advanced formatters that work on multiple lines:
+
+```tsx Multi-line Formatters
+function MultiLineMarkdownEditor() {
+  const [content, setContent] = useState('');
+  const { getInputProps } = useFormattingToolbar();
+
+  // Convert each line to a bullet point
+  const makeMultiLineBulletList = (text: string) => {
+    return text
+      .split('\n')
+      .map(line => line.trim() ? `- ${line}` : '')
+      .join('\n');
+  };
+
+  // Convert each line to a numbered list
+  const makeMultiLineNumberedList = (text: string) => {
+    return text
+      .split('\n')
+      .map((line, index) => line.trim() ? `${index + 1}. ${line}` : '')
+      .join('\n');
+  };
+
+  // Indent selected lines
+  const indentLines = (text: string) => {
+    return text
+      .split('\n')
+      .map(line => `  ${line}`)
+      .join('\n');
+  };
+
+  return (
+    <div>
+      <textarea
+        {...getInputProps()}
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+        placeholder="Type multiple lines and format them together..."
+        rows={10}
+      />
+
+      <FormattingToolbar>
+        {(applyFormat) => (
+          <div style={{ display: 'flex', gap: '8px', padding: '8px' }}>
+            <button onClick={() => applyFormat(makeMultiLineBulletList)}>
+              Multi-line Bullets
+            </button>
+            <button onClick={() => applyFormat(makeMultiLineNumberedList)}>
+              Multi-line Numbers
+            </button>
+            <button onClick={() => applyFormat(indentLines)}>
+              Indent Lines
+            </button>
+          </div>
+        )}
+      </FormattingToolbar>
+    </div>
+  );
+}
+```
+
+## With Tailwind CSS
+
+Here's the same example using Tailwind CSS classes:
+
+```tsx Tailwind Version
+import React, { useState } from 'react';
+import { useFormattingToolbar, FormattingToolbar } from 'blumbaben';
+
+function TailwindMarkdownEditor() {
+  const [content, setContent] = useState('');
+  const { getInputProps } = useFormattingToolbar();
+
+  return (
+    <div className="max-w-4xl mx-auto p-6">
+      <textarea
+        {...getInputProps()}
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+        placeholder="Start typing markdown..."
+        className="w-full p-4 font-mono text-sm border border-gray-300 rounded-lg 
+                   focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        rows={12}
+      />
+
+      <FormattingToolbar className="bg-white border border-gray-200 rounded-lg shadow-xl p-2">
+        {(applyFormat) => (
+          <div className="flex gap-1 items-center">
+            <button
+              onClick={() => applyFormat((text) => `**${text}**`)}
+              className="px-3 py-2 bg-white hover:bg-gray-100 border border-gray-200 
+                       rounded-md transition-colors font-bold"
+              title="Bold"
+            >
+              B
+            </button>
+
+            <button
+              onClick={() => applyFormat((text) => `*${text}*`)}
+              className="px-3 py-2 bg-white hover:bg-gray-100 border border-gray-200 
+                       rounded-md transition-colors italic"
+              title="Italic"
+            >
+              I
+            </button>
+
+            <button
+              onClick={() => applyFormat((text) => `\`${text}\``)}
+              className="px-3 py-2 bg-white hover:bg-gray-100 border border-gray-200 
+                       rounded-md transition-colors font-mono text-xs"
+              title="Code"
+            >
+              {'<>'}
+            </button>
+
+            <div className="w-px h-6 bg-gray-200 mx-1" />
+
+            <button
+              onClick={() => applyFormat((text) => `[${text}](url)`)}
+              className="px-3 py-2 bg-white hover:bg-gray-100 border border-gray-200 
+                       rounded-md transition-colors"
+              title="Link"
+            >
+              🔗
+            </button>
+
+            <button
+              onClick={() => applyFormat((text) => `> ${text}`)}
+              className="px-3 py-2 bg-white hover:bg-gray-100 border border-gray-200 
+                       rounded-md transition-colors"
+              title="Quote"
+            >
+              "
+            </button>
+          </div>
+        )}
+      </FormattingToolbar>
+    </div>
+  );
+}
+```
+
+<Info>
+The toolbar automatically positions itself near the focused textarea and follows it across multiple inputs in your application.
+</Info>
+
+## Related Documentation
+
+- [API Reference](/api/hooks/use-formatting-toolbar) - Full API documentation
+- [Text Transforms](/examples/text-transforms) - Text transformation examples
+- [Conditional Toolbar](/examples/conditional-toolbar) - Conditional toolbar content

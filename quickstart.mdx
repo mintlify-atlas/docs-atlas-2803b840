@@ -1,80 +1,333 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quick start
+description: Get up and running with Blumbaben in minutes
 ---
 
-## Get started in three steps
+# Quick start
 
-Get your documentation site running locally and make your first customization.
+This guide will help you add a formatting toolbar to your React application in just a few minutes.
 
-### Step 1: Set up your local environment
+## Basic usage
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+<Steps>
+  <Step title="Import the hook and component">
+    Start by importing `useFormattingToolbar` and `FormattingToolbar` from Blumbaben:
 
-### Step 2: Deploy your changes
+    ```tsx
+    import { useFormattingToolbar, FormattingToolbar } from 'blumbaben';
+    ```
+  </Step>
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+  <Step title="Set up your component state">
+    Create a state variable to manage your input value:
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+    ```tsx
+    import { useState } from 'react';
+    import { useFormattingToolbar, FormattingToolbar } from 'blumbaben';
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+    function MyComponent() {
+      const [content, setContent] = useState('');
+      const { getInputProps } = useFormattingToolbar();
 
-### Step 3: Go live
+      return (
+        // Component JSX goes here
+      );
+    }
+    ```
+  </Step>
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+  <Step title="Add the input element">
+    Spread `getInputProps()` onto your input or textarea element:
+
+    ```tsx
+    function MyComponent() {
+      const [content, setContent] = useState('');
+      const { getInputProps } = useFormattingToolbar();
+
+      return (
+        <div>
+          <textarea
+            {...getInputProps()}
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="Focus me to see the toolbar!"
+            rows={5}
+            className="w-full p-2 border rounded"
+          />
+        </div>
+      );
+    }
+    ```
+
+    <Note>
+      The `getInputProps()` function provides `onFocus` and `onBlur` handlers that manage toolbar visibility automatically.
+    </Note>
+  </Step>
+
+  <Step title="Add the formatting toolbar">
+    Add the `FormattingToolbar` component with your formatting buttons:
+
+    ```tsx
+    function MyComponent() {
+      const [content, setContent] = useState('');
+      const { getInputProps } = useFormattingToolbar();
+
+      return (
+        <div>
+          <textarea
+            {...getInputProps()}
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="Focus me to see the toolbar!"
+            rows={5}
+            className="w-full p-2 border rounded"
+          />
+
+          <FormattingToolbar>
+            {(applyFormat) => (
+              <div className="flex gap-2 p-2 bg-white border rounded shadow">
+                <button
+                  onClick={() => applyFormat((text) => text.toUpperCase())}
+                  className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                >
+                  UPPERCASE
+                </button>
+                <button
+                  onClick={() => applyFormat((text) => `**${text}**`)}
+                  className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+                >
+                  Bold
+                </button>
+                <button
+                  onClick={() => applyFormat((text) => text.trim())}
+                  className="px-3 py-1 bg-purple-500 text-white rounded hover:bg-purple-600"
+                >
+                  Trim
+                </button>
+              </div>
+            )}
+          </FormattingToolbar>
+        </div>
+      );
+    }
+    ```
+  </Step>
+</Steps>
+
+## Complete example
+
+Here's a complete working example you can copy and paste:
+
+```tsx App.tsx
+import { useState } from 'react';
+import { useFormattingToolbar, FormattingToolbar } from 'blumbaben';
+
+function App() {
+  const [content, setContent] = useState('');
+  const { getInputProps } = useFormattingToolbar();
+
+  return (
+    <div className="max-w-2xl mx-auto p-8">
+      <h1 className="text-2xl font-bold mb-4">Blumbaben Demo</h1>
+      
+      <textarea
+        {...getInputProps()}
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+        placeholder="Focus this field to see the formatting toolbar appear below..."
+        rows={8}
+        className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+
+      <FormattingToolbar>
+        {(applyFormat) => (
+          <div className="flex gap-2 p-2 bg-white border border-gray-200 rounded-lg shadow-lg">
+            <button
+              onClick={() => applyFormat((text) => text.toUpperCase())}
+              className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+              title="Convert to uppercase"
+            >
+              ABC
+            </button>
+            <button
+              onClick={() => applyFormat((text) => text.toLowerCase())}
+              className="px-3 py-1.5 text-sm bg-green-500 text-white rounded hover:bg-green-600 transition"
+              title="Convert to lowercase"
+            >
+              abc
+            </button>
+            <button
+              onClick={() => applyFormat((text) => `**${text}**`)}
+              className="px-3 py-1.5 text-sm bg-purple-500 text-white rounded hover:bg-purple-600 transition"
+              title="Wrap with bold markdown"
+            >
+              <strong>B</strong>
+            </button>
+            <button
+              onClick={() => applyFormat((text) => `*${text}*`)}
+              className="px-3 py-1.5 text-sm bg-pink-500 text-white rounded hover:bg-pink-600 transition"
+              title="Wrap with italic markdown"
+            >
+              <em>I</em>
+            </button>
+            <button
+              onClick={() => applyFormat((text) => text.replace(/\n/g, ' '))}
+              className="px-3 py-1.5 text-sm bg-red-500 text-white rounded hover:bg-red-600 transition"
+              title="Remove line breaks"
+            >
+              Remove breaks
+            </button>
+            <button
+              onClick={() => applyFormat((text) => text.trim())}
+              className="px-3 py-1.5 text-sm bg-yellow-500 text-white rounded hover:bg-yellow-600 transition"
+              title="Trim whitespace"
+            >
+              Trim
+            </button>
+          </div>
+        )}
+      </FormattingToolbar>
+    </div>
+  );
+}
+
+export default App;
+```
+
+## How it works
+
+<Steps>
+  <Step title="Focus event">
+    When you focus on an input or textarea with `getInputProps()` applied, the toolbar automatically appears.
+  </Step>
+
+  <Step title="Toolbar positioning">
+    The toolbar positions itself below the focused element by default. You can customize this with the `getPosition` config option.
+  </Step>
+
+  <Step title="Apply formatting">
+    When you click a toolbar button, the `applyFormat` function:
+    - Gets the selected text (or entire value if nothing is selected)
+    - Applies your formatter function to transform the text
+    - Updates the input value
+    - Maintains cursor position and selection
+  </Step>
+
+  <Step title="Blur event">
+    When you click outside the input, the toolbar hides after a configurable delay (default 500ms). This delay allows you to click toolbar buttons without the toolbar disappearing.
+  </Step>
+</Steps>
+
+## Multiple inputs
+
+Blumbaben's global state management means you can use the same toolbar across multiple inputs:
+
+```tsx
+function MultiInputForm() {
+  const { getInputProps } = useFormattingToolbar();
+  const [field1, setField1] = useState('');
+  const [field2, setField2] = useState('');
+  const [field3, setField3] = useState('');
+
+  return (
+    <div>
+      <input
+        {...getInputProps()}
+        value={field1}
+        onChange={(e) => setField1(e.target.value)}
+        placeholder="First field"
+      />
+
+      <input
+        {...getInputProps()}
+        value={field2}
+        onChange={(e) => setField2(e.target.value)}
+        placeholder="Second field"
+      />
+
+      <textarea
+        {...getInputProps()}
+        value={field3}
+        onChange={(e) => setField3(e.target.value)}
+        placeholder="Third field"
+      />
+
+      {/* Single toolbar works with all inputs */}
+      <FormattingToolbar>
+        {(applyFormat) => (
+          <div className="toolbar">
+            <button onClick={() => applyFormat((text) => text.toUpperCase())}>
+              UPPERCASE
+            </button>
+          </div>
+        )}
+      </FormattingToolbar>
+    </div>
+  );
+}
+```
+
+<Info>
+  Only one toolbar appears at a time, regardless of how many inputs you have. The toolbar automatically switches when you focus on a different input.
+</Info>
+
+## Customization options
+
+### Custom positioning
+
+Position the toolbar above the input instead of below:
+
+```tsx
+const { getInputProps } = useFormattingToolbar({
+  getPosition: (element) => {
+    const rect = element.getBoundingClientRect();
+    return {
+      x: rect.left,
+      y: rect.top - 50, // 50px above the element
+    };
+  },
+});
+```
+
+### Custom hide delay
+
+Change how long the toolbar stays visible after blur:
+
+```tsx
+const { getInputProps } = useFormattingToolbar({
+  hideDelay: 300, // Hide after 300ms instead of default 500ms
+});
+```
+
+### Custom styling
+
+Apply custom styles to the toolbar container:
+
+```tsx
+<FormattingToolbar
+  className="my-custom-toolbar"
+  style={{
+    backgroundColor: '#f8fafc',
+    borderRadius: '12px',
+    padding: '12px',
+  }}
+>
+  {(applyFormat) => (
+    // Your toolbar content
+  )}
+</FormattingToolbar>
+```
 
 ## Next steps
 
-Now that you have your docs running, explore these key features:
+Now that you have a basic formatting toolbar working, explore more advanced features:
 
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="View source code" icon="github" href="https://github.com/ragaeeb/blumbaben">
+    Check out the full source code and examples
+  </Card>
+  
+  <Card title="Live demo" icon="display" href="https://blumbaben.vercel.app">
+    Explore the Storybook showcase with interactive examples
+  </Card>
 </CardGroup>
-
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>
