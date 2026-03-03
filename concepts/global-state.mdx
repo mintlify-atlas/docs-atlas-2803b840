@@ -236,19 +236,28 @@ The `useFormattingToolbar` hook automatically subscribes to the global state and
 
 ## Advanced: Direct Access
 
-For advanced use cases, you can import and use the global manager directly:
+<Warning>
+The `globalToolbarManager` is an internal implementation detail and is not exported as part of the public API. Always use the provided hooks (`useFormattingToolbar`, `useFormattingToolbarState`) or components (`FormattingToolbar`, `withFormattingToolbar`) instead.
+</Warning>
+
+If you need manual control over the toolbar, use the `useFormattingToolbar` hook which provides direct access to show/hide methods:
 
 ```typescript
-import { globalToolbarManager } from 'blumbaben';
+import { useFormattingToolbar } from 'blumbaben';
 
-// Show toolbar for an element
-globalToolbarManager.showToolbar(textareaElement);
-
-// Apply formatting
-globalToolbarManager.applyFormat((text) => text.toUpperCase());
-
-// Get current state
-const state = globalToolbarManager.getState();
+function MyComponent() {
+  const { showToolbar, hideToolbar, applyFormat, toolbarState } = useFormattingToolbar();
+  
+  // Manual control when needed
+  const handleCustomFocus = (element: HTMLTextAreaElement) => {
+    showToolbar(element);
+  };
+  
+  // Access current state
+  console.log('Toolbar visible:', toolbarState.isVisible);
+  
+  return (/* ... */);
+}
 ```
 
 ## Related
